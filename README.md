@@ -1,6 +1,6 @@
 # Image Analysis Scripts in Jython for FIJI/ImageJ
 
-This is a general purpose repository of Python language image analysis scripts for use in the Jython interpreter in FIJI/ImageJ. I will upload sets of things that will hopefully prove both user-friendly and generally useful to others. What is published here appears to work for my unique use-case, but may require some modifications or generalizations for other uses. Open to any pull requests with function extensions, enhancements, or optimizations.
+This is a general purpose repository of Python language image analysis scripts for use in the Jython interpreter in FIJI/ImageJ. Where appropriate, I will also endeavor to included data analysis scripts in R. I will upload sets of things that will hopefully prove both user-friendly and generally useful to others. What is published here appears to work for my unique use-case, but may require some modifications or generalizations for other uses. Open to any pull requests with function extensions, enhancements, or optimizations.
 
 ## MIPS
 
