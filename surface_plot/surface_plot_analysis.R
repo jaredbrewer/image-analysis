@@ -62,7 +62,7 @@ for (t in unique(cells$treat)) {
 
 t.test(aucs$per ~ aucs$treat)
 
-# Plot the AUCs
+# Plot the AUCs - must add your own labels.
 
 auc.plot <- ggplot(aucs, aes(x = treat, y = per)) + 
   geom_beeswarm(aes(shape = treat, size = 3)) + 
