@@ -20,30 +20,26 @@ for input in inputs:
 	if input.startswith("MAX_"):
 		filenames.append(input)
 
-mips = []
 names = []
 chans = []
 
 for files in filenames:
-	file = os.path.join(basedir, files)
-	mips.append(file)
 	base = str(files.split("-", 1)[1])
 	chan = str(files.split("-", 1)[0])
-	chans.append(chan)
 	names.append(base)
+	chans.append(chan)
 
 names = set(names)
 chans = sorted(set(chans))
 mip_dict = {}
 
 for name in names:
-	title = ""
-	for mip in mips:
-		for chan in chans:
-			if mip.startswith(basedir + chan) and mip.endswith(name):
-				mip_dict["C" + int(chans.index(chan) + 1)] = mip
-				title = mip.replace(basedir + chan + "-", "")
-	merge = RGBStackMerge.mergeChannels([ImagePlus(mip_dict['C3']), None, ImagePlus(mip_dict['C2']), None, None, None, ImagePlus(mip_dict['C1'])], False)
+	for chan in chans:
+		# Watch the separator - it has played me many times. They all need to be the same
+		mip = path.join(basedir, chan + "-" + name)
+		mip_dict["C" + str(int(chans.index(chan) + 1))] = mip
+	title = name
+	merge = RGBStackMerge.mergeChannels([ImagePlus(mip_dict['C3']), None, ImagePlus(mip_dict['C2']), None, ImagePlus(mip_dict['C4']), None, ImagePlus(mip_dict['C1'])], False)
 	out = path.join(outputdir, title)
 	del title
 	IJ.saveAs(merge, "Tiff", out)
