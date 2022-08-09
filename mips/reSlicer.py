@@ -5,9 +5,11 @@ from ij.plugin import Plugin
 from ij.process import ImageProcessor
 from os import path
 
+# Defaults:
 first = 1
 last = 9999
 inc = 2
+imp = IJ.getImage()
 
 def sliceKeeper(imp, first, last, inc):
 
