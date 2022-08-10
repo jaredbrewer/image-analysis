@@ -21,17 +21,17 @@ from ij import IJ, ImagePlus
 
 imp = IJ.getImage()
 IJ.run(imp, "3D Surface Plot",
-'''plotType=1
-colorType=3
-drawAxes=0
-drawLines=0
-drawText=0
-grid=256
-drawLegend=0
-smooth=8.5
-backgroundColor=000000
-windowHeight=600
-windowWidth=720''')
+	'''plotType=1
+	colorType=3
+	drawAxes=0
+	drawLines=0
+	drawText=0
+	grid=256
+	drawLegend=0
+	smooth=8.5
+	backgroundColor=000000
+	windowHeight=600
+	windowWidth=720''')
 ```
 
 manSurfacePlotMeasure.py and autoSurfacePlotMeasure.py take the 2D XZ images from 3D Surface Plot and captures all the bit-wise >0 points on the plot and saves them to a CSV file. It will do this for either an entire directory of images (perhaps best from autoIsolator.py) or individual images (manIsolator.py) and save the output to a .csv file. These .csv files can then be interpreted using the included surface_plot_analsis.R script (although a Python interpretation is certainly possible).
