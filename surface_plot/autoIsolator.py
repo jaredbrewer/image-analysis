@@ -41,7 +41,7 @@ for files in filenames:
 			file = os.path.join(inputdir, files)
 			rep_files.append(file)
 
-for f in czi_files:
+for f in rep_files:
 	imp = IJ.openImage(f)
 	proj = ZProjector.run(imp, "max all")
 	imps = ChannelSplitter.split(proj)
