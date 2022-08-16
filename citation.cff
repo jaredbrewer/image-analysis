@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Brewer
+	given-names: W. Jared
+	orcid: https://orcid.org/0000-0003-2217-2172
+title: "FIJI/ImageJ Analysis Scripts"
+version: 0.1-initial
+doi: 10.5281/zenodo.6998191
+date-released: 2022-08-16
