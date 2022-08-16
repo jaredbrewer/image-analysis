@@ -1,10 +1,34 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+title: FIJI/ImageJ Analysis Scripts
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
 authors:
-  - family-names: Brewer
-	given-names: W. Jared
-	orcid: https://orcid.org/0000-0003-2217-2172
-title: "FIJI/ImageJ Analysis Scripts"
-version: 0.1-initial
-doi: 10.5281/zenodo.6998191
-date-released: 2022-08-16
+  - given-names: W. Jared
+    name-particle: Brewer
+    email: jaredbrewer@me.com
+    affiliation: Duke University
+    orcid: 'https://orcid.org/0000-0003-2217-2172'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.6998190
+repository-code: 'https://github.com/jaredbrewer/image-analysis'
+abstract: >-
+  This is a general purpose repository of Python
+  language image analysis scripts for use in the
+  Jython interpreter in FIJI/ImageJ. Where
+  appropriate, I will also endeavor to included data
+  analysis scripts in R. I will upload sets of things
+  that will hopefully prove both user-friendly and
+  generally useful to others. What is published here
+  appears to work for my unique use-case, but may
+  require some modifications or generalizations for
+  other uses. Open to any pull requests with function
+  extensions, enhancements, or optimizations.
+license: GPL-3.0
+version: 0.1.1
+date-released: '2022-08-16'
