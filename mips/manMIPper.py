@@ -1,10 +1,10 @@
 from ij import IJ, ImagePlus
 from ij.plugin import ZProjector
-from ij.gui import GenericDialog
+from ij.gui import NonBlockingGenericDialog
 import os, sys, random
 from os import path
 
-gui = GenericDialog("MIP Ranges")
+gui = NonBlockingGenericDialog("MIP Ranges")
 
 gui.addNumericField("First Slice: ", 0, 0)
 gui.addNumericField("Last Slice: ", 0, 0)
@@ -42,7 +42,7 @@ proj = ZProjector.run(imp, "max", int(bot), int(top))
 
 title = proj.getTitle()
 out = path.join(outputdir, title)
-IJ.saveAs(proj, "Tiff", out)
+#IJ.saveAs(proj, "Tiff", out)
 
 #Comment out these lines if you'd like to see your images before you close them.
 imp.close()

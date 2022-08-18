@@ -1,6 +1,6 @@
 from ij import IJ, ImagePlus
 from ij.plugin import ZProjector
-from ij.gui import WaitForUserDialog, GenericDialog
+from ij.gui import NonBlockingGenericDialog, GenericDialog
 import os, sys, random
 from os import path
 
@@ -44,10 +44,8 @@ for f in rep_files:
 	if mip_title.replace(extension, ".tif") not in mips:
 		imp = IJ.openImage(f)
 		imp.show()
-		waiter = WaitForUserDialog("Identify First/Last Slices")
-		waiter.show()
 		
-		gui = GenericDialog("MIP Ranges")
+		gui = NonBlockingGenericDialog("MIP Ranges")
 		gui.addNumericField("First Slice: ", 0, 0)
 		gui.addNumericField("Last Slice: ", 0, 0)
 		gui.showDialog()
