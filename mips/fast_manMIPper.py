@@ -34,7 +34,7 @@ elif ext == "Other":
 rep_files = []
 
 for files in filenames:
-	if files.lower().endswith(extension):
+	if files.lower().endswith(extension) and "_thumb_" not in files.lower():
 		file = os.path.join(inputdir, files)
 		rep_files.append(file)
 
