@@ -6,7 +6,7 @@ from ij.gui import GenericDialog
 import os, random, csv
 from os import path
 
-def burden(directory, chan, min_meas_thres, ext = ".czi", screen_thres = "Otsu dark"):
+def burden(directory, chan, min_threshold, ext = ".czi", screen_thres = "Otsu dark", proj_save = False, proj_show = False, imp_close = True):
 
 	filenames = os.listdir(str(directory))
 	bfiles = []
@@ -27,7 +27,11 @@ def burden(directory, chan, min_meas_thres, ext = ".czi", screen_thres = "Otsu d
 	for f in bfiles:
 
 		imp = IJ.openImage(f)
+		if not imp_close:
+			imp.show()
 		proj = ZProjector.run(imp, "max all")
+		if proj_show:
+			proj.show()
 		proj.setC(int(chan))
 		IJ.setAutoThreshold(proj, str(screen_thres))
 		IJ.run(proj, "Analyze Particles...", "size=100000.00-Infinity clear include add slice")
@@ -46,15 +50,21 @@ def burden(directory, chan, min_meas_thres, ext = ".czi", screen_thres = "Otsu d
 		rm.reset()
 
 		IJ.run(proj, "Select All", "")
-		IJ.setRawThreshold(proj, int(min_meas_thres), 2**int(proj.getBitDepth()) - 1)
+		IJ.setRawThreshold(proj, int(min_threshold), 2**int(proj.getBitDepth()) - 1)
 		IJ.run(proj, "Measure", "")
 		rt = ResultsTable.getResultsTable()
 		row = rt.getRowAsString(0).split("\t")
 		headings = rt.getColumnHeadings().split("\t")
 		data.append(row)
 
-		imp.close()
-		proj.close()
+		if imp_close:
+			imp.close()
+		if not proj_show:
+			proj.close()
+
+		if proj_save:
+			out = path.join(directory, proj.getTitle())
+			IJ.saveAs(proj, "Tiff", out)
 
 		rand = random.randint(1, 100)
 		if rand > 85:
