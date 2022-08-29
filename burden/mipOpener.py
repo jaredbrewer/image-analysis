@@ -25,3 +25,4 @@ for f in files:
 	else:
 		pass
 
+# No matter what, you will eventually run out of memory with this sort of operation if you have enough images to open - at ~2-15 MB (typical), you should have overhead for hundreds or thousands of images on a 16 GB memory allocation.

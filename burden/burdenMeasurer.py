@@ -1,12 +1,13 @@
 from ij import IJ, ImagePlus
 from ij.measure import ResultsTable
 from ij.plugin.frame import RoiManager
+from ij.process import AutoThresholder
 from ij.plugin import ZProjector
 from ij.gui import GenericDialog
 import os, random, csv, sys
 from os import path
 
-def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False, subset = None, man_psize = 100000):
+def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle", brightfield = False, subset = None, man_psize = 100000):
 
 # directory is a string with path to the files you wish to analyze.
 # chan is an integer of the channel # with the bacteria.
@@ -20,22 +21,26 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 # outline_threshold is a string with the thresholding algorithm to find the whole fish (you want something generous, but probably not MinError or similar).
 # brightfield is a boolean telling whether or not the selected fish_channel is the brightfield channel. This can be useful and very convenient, but requires some additional processing to be useful.
 # subset is to run the function over a subset of the total number of images. Provide an integer value less than the total number of images in the directory. If subset is selected, the projections will automatically show.
+# man_psize is a manual particle size value for the "Analyze Particles..." function. Default has worked well for me, but can be changed if needed.
 
 	filenames = os.listdir(str(directory))
 	bfiles = []
 
 	if not ext.startswith("."):
+		# Rigid binding of extension per se.
 		ext = "." + ext
 	for files in filenames:
 		if files.endswith(str(ext)):
 			file = path.join(str(directory), files)
 			bfiles.append(file)
 
+	# Make sure all our measurements are set properly.
 	IJ.run("Set Measurements...",
 	"area mean min limit display redirect=None decimal=3")
 
 	rm = RoiManager.getRoiManager()
 	data = []
+
 
 	if subset > len(bfiles):
 		print("The subset is greater than the number of files - running on whole directory.")
@@ -44,18 +49,20 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 		bfiles = bfiles[0:int(subset)]
 		proj_show = True
 
-	valid_thresholds = ["Try all dark", "Default dark", "Huang dark", "Intermodes dark", "IsoData dark", "IJ_IsoData dark", "Li dark", "MaxEntropy dark", "Mean dark", "MinError dark", "Minimum dark", "Moments dark", "Otsu dark", "Percentile dark", "RenyiEntropy dark", "Shanbhag dark", "Triangle dark", "Yen dark"]
+	valid_thresholds = []
+	for i in AutoThresholder.Method.values():
+		valid_thresholds.append(str(i))
 
 	if screen_threshold not in valid_thresholds:
-		screen_threshold = "Otsu dark"
-	if screen_threshold == "Try all dark":
-		IJ.run(imp, "Auto Threshold", "method=[Try all] dark")
+		screen_threshold = "Otsu"
+	if screen_threshold == "Try all":
+		IJ.run(imp, "Auto Threshold", "method=[Try all]")
 	if outline_threshold not in valid_thresholds:
-		outline_threshold = "Triangle dark"
-	if outline_threshold == "Try all dark":
-		IJ.run(imp, "Auto Threshold", "method=[Try all] dark")
+		outline_threshold = "Triangle"
+	if outline_threshold == "Try all":
+		IJ.run(imp, "Auto Threshold", "method=[Try all]")
 
-	if screen_threshold or outline_threshold == "Try all dark":
+	if screen_threshold or outline_threshold == "Try all":
 		sys.exit(0)
 
 	for f in bfiles:
