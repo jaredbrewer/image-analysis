@@ -3,10 +3,10 @@ from ij.measure import ResultsTable
 from ij.plugin.frame import RoiManager
 from ij.plugin import ZProjector
 from ij.gui import GenericDialog
-import os, random, csv
+import os, random, csv, sys
 from os import path
 
-def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False):
+def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False, subset = None):
 
 # directory is a string with path to the files you wish to analyze.
 # chan is an integer of the channel # with the bacteria.
@@ -19,6 +19,7 @@ def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Ots
 # fish_channel is an integer for the channel containing something we could use as the basis for an outline of the fish.
 # outline_threshold is a string with the thresholding algorithm to find the whole fish (you want something generous, but probably not MinError or similar).
 # brightfield is a boolean telling whether or not the selected fish_channel is the brightfield channel. This can be useful and very convenient, but requires some additional processing to be useful.
+# Subset is to run the function over a subset of the total number of images. Provide an integer value less than the total number of images in the directory. If subset is selected, the projections will automatically show.
 
 	filenames = os.listdir(str(directory))
 	bfiles = []
@@ -35,6 +36,13 @@ def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Ots
 
 	rm = RoiManager.getRoiManager()
 	data = []
+
+	if subset > len(bfiles):
+		print("The subset is greater than the number of files - running on whole directory.")
+		subset = None
+	if subset:
+		bfiles = bfiles[0:int(subset)]
+		proj_show = True
 
 	for f in bfiles:
 
