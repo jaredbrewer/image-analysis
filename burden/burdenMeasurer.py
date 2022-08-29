@@ -7,7 +7,7 @@ from ij.gui import GenericDialog, NonBlockingGenericDialog
 import os, random, csv, sys
 from os import path
 
-def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle", brightfield = False, subset = None, man_psize = 100000):
+def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False, subset = None, man_psize = 100000):
 
 # directory is a string with path to the files you wish to analyze.
 # chan is an integer of the channel # with the bacteria.
@@ -41,7 +41,6 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu", proj_
 	rm = RoiManager.getRoiManager()
 	data = []
 
-
 	if subset > len(bfiles):
 		print("The subset is greater than the number of files - running on whole directory.")
 		subset = None
@@ -49,86 +48,96 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu", proj_
 		bfiles = bfiles[0:int(subset)]
 		proj_show = True
 
-	valid_thresholds = [str(i) for i in AutoThresholder.Method.values()]
+	valid_thresholds = [str(i + " dark") for i in AutoThresholder.getMethods()]
+	valid_thresholds.append("Try all")
 
-	if screen_threshold not in valid_thresholds:
-		screen_threshold = "Otsu"
 	if screen_threshold == "Try all":
-		IJ.run(imp, "Auto Threshold", "method=[Try all]")
-	if outline_threshold not in valid_thresholds:
-		outline_threshold = "Triangle"
-	if outline_threshold == "Try all":
-		IJ.run(imp, "Auto Threshold", "method=[Try all]")
-
-	if screen_threshold or outline_threshold == "Try all":
-		sys.exit(0)
-
-	for f in bfiles:
-
-		imp = IJ.openImage(f)
-		if imp_show:
-			imp.show()
-		proj = ZProjector.run(imp, "max all")
-		if proj_show:
-			proj.show()
-		proj.setC(int(chan))
-		IJ.setAutoThreshold(proj, str(screen_threshold))
-		IJ.run(proj, "Analyze Particles...", "size="+man_psize+".00-Infinity clear include add slice")
-
-		if rm.getCount() > 1: # This is the dumbest source of a downstream error I have ever encountered. rm.getCount is an attribute and rm.getCount() is a method = two different outcomes, but no evaluation error.
-			rm.runCommand(proj, "Select All")
-			rm.runCommand(proj, "Combine")
-			rm.runCommand(proj, "Delete")
-			rm.runCommand(proj, "Add")
-
-		rm.select(proj, 0)
-
-		IJ.run(proj, "Clear", "slice")
-		IJ.run(proj, "Select None", "")
-		IJ.run(proj, "Remove Overlay", "")
-		rm.reset()
-
-		# Build some logic for using the outline of the fish if provided. Brightfield images probably need even more work, but this will *probably* work for fluorescent channels.
-		if fish_channel:
-			proj.setC(int(fish_channel))
-			if brightfield:
-				IJ.run(proj, "Invert", "slice")
-			IJ.setAutoThreshold(proj, outline_threshold)
-			IJ.run(proj, "Analyze Particles...", "size="+man_psize+".00-Infinity clear include add slice")
+		for f in bfiles:
+			imp = IJ.openImage(f)
+			proj = ZProjector.run(imp, "max all")
 			proj.setC(int(chan))
-			ra = rm.getRoisAsArray()
-			for r in ra:
-				rm.addRoi(r)
-			if rm.getCount() > 1:
+			IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
+	elif outline_threshold == "Try all":
+		for f in bfiles:
+			imp = IJ.openImage(f)
+			proj = ZProjector.run(imp, "max all")
+			proj.setC(int(fish_channel))
+			IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
+	else:
+		for f in bfiles:
+
+			imp = IJ.openImage(f)
+			if imp_show:
+				imp.show()
+			proj = ZProjector.run(imp, "max all")
+			if proj_show:
+				proj.show()
+			proj.setC(int(chan))
+
+			if screen_threshold not in valid_thresholds:
+				screen_threshold = "Otsu dark"
+
+			IJ.setAutoThreshold(proj, str(screen_threshold))
+			IJ.run(proj, "Analyze Particles...", "size="+str(man_psize)+".00-Infinity clear include add slice")
+
+			if rm.getCount() > 1: # This is the dumbest source of a downstream error I have ever encountered. rm.getCount is an attribute and rm.getCount() is a method = two different outcomes, but no evaluation error.
 				rm.runCommand(proj, "Select All")
 				rm.runCommand(proj, "Combine")
 				rm.runCommand(proj, "Delete")
 				rm.runCommand(proj, "Add")
+
 			rm.select(proj, 0)
 
-		if not fish_channel:
-			IJ.run(proj, "Select All", "")
-		IJ.setRawThreshold(proj, int(min_threshold), 2**int(proj.getBitDepth()) - 1)
-		IJ.run(proj, "Measure", "")
-		rt = ResultsTable.getResultsTable()
-		row = rt.getRowAsString(0).split("\t")
-		headings = rt.getColumnHeadings().split("\t")
-		data.append(row)
+			IJ.run(proj, "Clear", "slice")
+			IJ.run(proj, "Select None", "")
+			IJ.run(proj, "Remove Overlay", "")
+			rm.reset()
 
-		if not imp_show:
-			imp.close()
-		if not proj_show:
-			proj.close()
+			# Build some logic for using the outline of the fish if provided. Brightfield images probably need even more work, but this will *probably* work for fluorescent channels.
+			if fish_channel:
+				proj.setC(int(fish_channel))
+				if brightfield:
+					IJ.run(proj, "Invert", "slice")
+				if outline_threshold not in valid_thresholds:
+					outline_threshold = "Triangle dark"
+				IJ.setAutoThreshold(proj, outline_threshold)
+				IJ.run(proj, "Analyze Particles...", "size="+str(man_psize)+".00-Infinity clear include add slice")
+				proj.setC(int(chan))
+				ra = rm.getRoisAsArray()
+				for r in ra:
+					rm.addRoi(r)
+				if rm.getCount() > 1:
+					rm.runCommand(proj, "Select All")
+					rm.runCommand(proj, "Combine")
+					rm.runCommand(proj, "Delete")
+					rm.runCommand(proj, "Add")
 
-		if proj_save:
-			out = path.join(directory, proj.getTitle())
-			IJ.saveAs(proj, "Tiff", out)
+				rm.select(proj, 0)
 
-		rand = random.randint(1, 100)
-		if rand > 85:
-			IJ.run("Collect Garbage", "")
-		else:
-			pass
+			else:
+				IJ.run(proj, "Select All", "")
+
+			IJ.setRawThreshold(proj, int(min_threshold), 2**int(proj.getBitDepth()) - 1)
+			IJ.run(proj, "Measure", "")
+			rt = ResultsTable.getResultsTable()
+			row = rt.getRowAsString(0).split("\t")
+			headings = rt.getColumnHeadings().split("\t")
+			data.append(row)
+
+			if not imp_show:
+				imp.close()
+			if not proj_show:
+				proj.close()
+
+			if proj_save:
+				out = path.join(directory, proj.getTitle())
+				IJ.saveAs(proj, "Tiff", out)
+
+			rand = random.randint(1, 100)
+			if rand > 85:
+				IJ.run("Collect Garbage", "")
+			else:
+				pass
 
 	with open(path.join(directory, "burden.csv"), "w") as csvfile:
 		writer = csv.writer(csvfile)
@@ -141,22 +150,23 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu", proj_
 
 def burden_gui():
 
-	values = [str(x) for x in AutoThresholder.Method.values()]
+	values = [str(x + " dark") for x in AutoThresholder.getMethods()]
+	values.append("Try all")
 
 	gui = NonBlockingGenericDialog("Bacterial Burden Measurement")
-	gui.addDirectoryField("Image Folder: ", "~/Documents")
+	gui.addDirectoryField("Image Folder: ", " ~/Documents")
 	gui.addChoice("File Extension: ", [".czi", ".lif", ".lsm", ".tif", ".tiff", "Other"], ".tif")
-	gui.addStringField("Custom File Extension: ", "")
+	gui.addStringField("Custom File Extension: ", ".jpeg")
 	gui.addNumericField("Bacterial Fluorescence Channel #: ", 1)
 	gui.addNumericField("Minimum Threshold: ", 200)
-	gui.addChoice("Background Removal Threshold: ", values, "Otsu")
+	gui.addChoice("Background Removal Threshold: ", values, "Otsu dark")
 	gui.addCheckbox("Save MIPs?", False)
 	gui.addCheckbox("Show MIPs?", False)
 	gui.addCheckbox("Show Images?", False)
 	gui.addCheckbox("Use Fish Outline?", False)
 	gui.addToSameRow()
 	gui.addNumericField("Channel # for Fish Outline: ", 2)
-	gui.addChoice("Fish Threshold: ", values, "Triangle")
+	gui.addChoice("Fish Threshold: ", values, "Triangle dark")
 	gui.addCheckbox("Brightfield Image?", False)
 	gui.addCheckbox("Only do a subset?", False)
 	gui.addToSameRow()
@@ -189,6 +199,8 @@ def burden_gui():
 		dump = gui.getNextChoice()
 		dump = gui.getNextBoolean()
 		fish_channel = None
+		outline_threshold = "Triangle"
+		brightfield = False
 	subset = gui.getNextBoolean()
 	if subset:
 		subset = int(gui.getNextNumber())

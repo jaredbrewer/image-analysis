@@ -55,7 +55,7 @@ These scripts are meant to facilitate analysis of _Mycobacterium marinum_ burden
 * (required) ```min_threshold``` - an integer of the empirically determined minimum threshold value that captures all the desired bacterial signal
 * (required) ```ext``` - a string with the file extension for the images you wish to analyze
 * (optional) ```screen_threshold``` - the automatic thresholding algorithm to use for identifying the yolk. "Otsu dark" is the default. "Try all dark" is a good option if you are unsure and will present a montage of all the threshold options for you to select from. Options are:
-	* "Try all dark"
+	* "Try all"
 	* "Default dark"
 	* "Huang dark"
 	* "Intermodes dark"
