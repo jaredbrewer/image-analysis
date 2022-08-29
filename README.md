@@ -45,3 +45,45 @@ surface_plot_analysis.R will take the directory of .csv files and process them t
 ## Composites
 
 One of the more click-intensive tasks in FIJI is the process of creating composite images from a set of individual color channels and these tools are meant as templates for implementing this logic in your own pipelines. They take folders of individual channels and then generate a LUT-keyed composite image from them. Some of the internal variables need to be edited in order to provide the results desired - for instance, the default merge is for 3 channels, but the function accepts up to 7 channels. I have, however, attempted to remove as much manual intervention as possible through string matching. One of the great things about ImageJ is the way it creates regularly patterned names for new files - the expected input for these scripts is the output of the "MIPS" scripts, but any set of channels will theoretically work with minor tweaking.
+
+## Burden
+
+These scripts are meant to facilitate analysis of _Mycobacterium marinum_ burden data from zebrafish larvae. One of the central challenges of the type of analysis the manual nature of having to draw circles around the larvae and avoiding inclusion of the autofluorescent yolk and any background signal. This facilitates removal of the yolk sac and other large sources of autofluorescence in the image. __burdenMeasurer.py__ is the primary function and should be installed as a FIJI program by addition to the active FIJI path (```import sys print(sys.path)``` in a Jython FIJI window). This will allow you to call burden() to run these measurements over entire directories of images (performance, while not completely optimized, turn this from a procedure taking many hours to one taking single-digit minutes). The arguments burden() takes are:
+
+* (required) ```directory``` - a string with the file path to analyze
+* (required) ```chan``` - an integer of the bacterial fluorescence channel
+* (required) ```min_threshold``` - an integer of the empirically determined minimum threshold value that captures all the desired bacterial signal
+* (required) ```ext``` - a string with the file extension for the images you wish to analyze
+* (optional) ```screen_threshold``` - the automatic thresholding algorithm to use for identifying the yolk. "Otsu dark" is the default. "Try all dark" is a good option if you are unsure and will present a montage of all the threshold options for you to select from. Options are:
+	* "Try all dark"
+	* "Default dark"
+	* "Huang dark"
+	* "Intermodes dark"
+	* "IsoData dark"
+	* "IJ_IsoData dark"
+	* "Li dark"
+	* "MaxEntropy dark"
+	* "Mean dark"
+	* "MinError dark"
+	* "Minimum dark"
+	* "Moments dark"
+	* "Otsu dark"
+	* "Percentile dark"
+	* "RenyiEntropy dark"
+	* "Shanbhag dark"
+	* "Triangle dark"
+	* "Yen dark"
+* (optional) ```proj_save``` - boolean for if you want to save the projections as they are created (strictly a time saver for later) Options: ```True``` or ```False```
+* (optional) ```proj_show``` - boolean for showing the projections (```True```) or running silently in the background (```False```)
+* (optional) ```imp_show``` - boolean for showing the original images
+* (optional) ```fish_channel``` - an integer for the channel containing the whole fish if you wish to further mask measurements strictly to the fish
+* (optional) ```outline_threshold``` - a string with one of the autothreshold algorithms for the fish outline
+* (optional) ```brightfield``` - boolean for if the ```fish_channel``` is the brightfield channel
+* (optional) ```subset``` - an integer for the number of images you wish to try (must be less than the total number in the directory)
+* (optional) ```man_psize``` - an integer for the area size cut off for ```Analyze Particles...```. The default is pretty robust at 5x magnification, but larger (or smaller) values may be more appropriate. You can get an idea by running the threshold and measuring the yolk and using ~ the resulting area value (rounding down is good)
+
+__custBurdenMeasure.py__ is a more manual, but slightly stripped down, (and thus more transparent) implementation of the same logic that allows you to alter various parameters. Not recommended for casual users, but worthwhile for more advanced users. Could be useful for troubleshooting some of the intermediate steps.
+
+__burden_sorter.R__ is an R implementation of logic needed to calculate the percentiles for selecting "good" fish. You can change the parameters in various ways to make the cut offs more stringent/forgiving based on your use-case.
+
+__mipOpener.py__ is a simple program to open all the images in a directory as MIPs. Sets the channel to the bacterial channel automatically (provide the integer in ```setC()```).

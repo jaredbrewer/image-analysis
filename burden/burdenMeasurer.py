@@ -6,7 +6,7 @@ from ij.gui import GenericDialog
 import os, random, csv, sys
 from os import path
 
-def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False, subset = None):
+def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False, subset = None, man_psize = 100000):
 
 # directory is a string with path to the files you wish to analyze.
 # chan is an integer of the channel # with the bacteria.
@@ -19,7 +19,7 @@ def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Ots
 # fish_channel is an integer for the channel containing something we could use as the basis for an outline of the fish.
 # outline_threshold is a string with the thresholding algorithm to find the whole fish (you want something generous, but probably not MinError or similar).
 # brightfield is a boolean telling whether or not the selected fish_channel is the brightfield channel. This can be useful and very convenient, but requires some additional processing to be useful.
-# Subset is to run the function over a subset of the total number of images. Provide an integer value less than the total number of images in the directory. If subset is selected, the projections will automatically show.
+# subset is to run the function over a subset of the total number of images. Provide an integer value less than the total number of images in the directory. If subset is selected, the projections will automatically show.
 
 	filenames = os.listdir(str(directory))
 	bfiles = []
@@ -44,6 +44,20 @@ def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Ots
 		bfiles = bfiles[0:int(subset)]
 		proj_show = True
 
+	valid_thresholds = ["Try all dark", "Default dark", "Huang dark", "Intermodes dark", "IsoData dark", "IJ_IsoData dark", "Li dark", "MaxEntropy dark", "Mean dark", "MinError dark", "Minimum dark", "Moments dark", "Otsu dark", "Percentile dark", "RenyiEntropy dark", "Shanbhag dark", "Triangle dark", "Yen dark"]
+
+	if screen_threshold not in valid_thresholds:
+		screen_threshold = "Otsu dark"
+	if screen_threshold == "Try all dark":
+		IJ.run(imp, "Auto Threshold", "method=[Try all] dark")
+	if outline_threshold not in valid_thresholds:
+		outline_threshold = "Triangle dark"
+	if outline_threshold == "Try all dark":
+		IJ.run(imp, "Auto Threshold", "method=[Try all] dark")
+
+	if screen_threshold or outline_threshold == "Try all dark":
+		sys.exit(0)
+
 	for f in bfiles:
 
 		imp = IJ.openImage(f)
@@ -54,7 +68,7 @@ def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Ots
 			proj.show()
 		proj.setC(int(chan))
 		IJ.setAutoThreshold(proj, str(screen_threshold))
-		IJ.run(proj, "Analyze Particles...", "size=100000.00-Infinity clear include add slice")
+		IJ.run(proj, "Analyze Particles...", "size="+man_psize+".00-Infinity clear include add slice")
 
 		if rm.getCount() > 1: # This is the dumbest source of a downstream error I have ever encountered. rm.getCount is an attribute and rm.getCount() is a method = two different outcomes, but no evaluation error.
 			rm.runCommand(proj, "Select All")
@@ -75,7 +89,7 @@ def burden(directory, chan, min_threshold, ext = ".czi", screen_threshold = "Ots
 			if brightfield:
 				IJ.run(proj, "Invert", "slice")
 			IJ.setAutoThreshold(proj, outline_threshold)
-			IJ.run(proj, "Analyze Particles...", "size=100000.00-Infinity clear include add slice")
+			IJ.run(proj, "Analyze Particles...", "size="man_psize".00-Infinity clear include add slice")
 			proj.setC(int(chan))
 			ra = rm.getRoisAsArray()
 			for r in ra:
