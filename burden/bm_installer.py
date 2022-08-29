@@ -7,8 +7,8 @@ print(sys.path)
 if not path.isdir(sys.path[0]):
 	os.mkdir(sys.path[0])
 
-gui = GenericDialog("Macro Location: ")
-gui.addFileField("Macro Path", "~/Documents")
+gui = GenericDialog("Current Macro Location: ")
+gui.addFileField("Macro Path: ", "~/Documents")
 gui.showDialog()
 
 macro = str(gui.getNextString()) # File path to where the macro was downloaded.

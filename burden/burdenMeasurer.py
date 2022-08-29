@@ -3,7 +3,7 @@ from ij.measure import ResultsTable
 from ij.plugin.frame import RoiManager
 from ij.process import AutoThresholder
 from ij.plugin import ZProjector
-from ij.gui import GenericDialog
+from ij.gui import GenericDialog, NonBlockingGenericDialog
 import os, random, csv, sys
 from os import path
 
@@ -49,9 +49,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu", proj_
 		bfiles = bfiles[0:int(subset)]
 		proj_show = True
 
-	valid_thresholds = []
-	for i in AutoThresholder.Method.values():
-		valid_thresholds.append(str(i))
+	valid_thresholds = [str(i) for i in AutoThresholder.Method.values()]
 
 	if screen_threshold not in valid_thresholds:
 		screen_threshold = "Otsu"
@@ -96,7 +94,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu", proj_
 			if brightfield:
 				IJ.run(proj, "Invert", "slice")
 			IJ.setAutoThreshold(proj, outline_threshold)
-			IJ.run(proj, "Analyze Particles...", "size="man_psize".00-Infinity clear include add slice")
+			IJ.run(proj, "Analyze Particles...", "size="+man_psize+".00-Infinity clear include add slice")
 			proj.setC(int(chan))
 			ra = rm.getRoisAsArray()
 			for r in ra:
@@ -140,3 +138,74 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu", proj_
 
 	gui = GenericDialog("All Done! Output is located in " + directory)
 	gui.showDialog()
+
+def burden_gui():
+
+	values = [str(x) for x in AutoThresholder.Method.values()]
+
+	gui = NonBlockingGenericDialog("Bacterial Burden Measurement")
+	gui.addDirectoryField("Image Folder: ", "~/Documents")
+	gui.addChoice("File Extension: ", [".czi", ".lif", ".lsm", ".tif", ".tiff", "Other"], ".tif")
+	gui.addStringField("Custom File Extension: ", "")
+	gui.addNumericField("Bacterial Fluorescence Channel #: ", 1)
+	gui.addNumericField("Minimum Threshold: ", 200)
+	gui.addChoice("Background Removal Threshold: ", values, "Otsu")
+	gui.addCheckbox("Save MIPs?", False)
+	gui.addCheckbox("Show MIPs?", False)
+	gui.addCheckbox("Show Images?", False)
+	gui.addCheckbox("Use Fish Outline?", False)
+	gui.addToSameRow()
+	gui.addNumericField("Channel # for Fish Outline: ", 2)
+	gui.addChoice("Fish Threshold: ", values, "Triangle")
+	gui.addCheckbox("Brightfield Image?", False)
+	gui.addCheckbox("Only do a subset?", False)
+	gui.addToSameRow()
+	gui.addNumericField("If yes, how many images to try: ", 5)
+	gui.addNumericField("Manual Particle Size: ", 100000)
+	gui.showDialog()
+	if gui.wasCanceled():
+		sys.exit(0)
+
+	directory = str(gui.getNextString())
+	ext = str(gui.getNextChoice())
+	if ext == "Other":
+		ext = str(gui.getNextString()).lower()
+	else:
+		dump = gui.getNextString()
+
+	chan = int(gui.getNextNumber())
+	min_threshold = int(gui.getNextNumber())
+	screen_threshold = str(gui.getNextChoice())
+	proj_save = gui.getNextBoolean()
+	proj_show = gui.getNextBoolean()
+	imp_show = gui.getNextBoolean()
+	do_fish = gui.getNextBoolean()
+	if do_fish:
+		fish_channel = int(gui.getNextNumber())
+		outline_threshold = str(gui.getNextChoice())
+		brightfield = gui.getNextBoolean()
+	else:
+		dump = gui.getNextNumber()
+		dump = gui.getNextChoice()
+		dump = gui.getNextBoolean()
+		fish_channel = None
+	subset = gui.getNextBoolean()
+	if subset:
+		subset = int(gui.getNextNumber())
+	else:
+		subset = None
+	man_psize = int(gui.getNextNumber())
+
+	burden(directory = directory,
+		chan = chan,
+		min_threshold = min_threshold,
+		ext = ext,
+		screen_threshold = screen_threshold,
+		proj_save = proj_save,
+		proj_show = proj_show,
+		imp_show = imp_show,
+		fish_channel = fish_channel,
+		outline_threshold = outline_threshold,
+		brightfield = brightfield,
+		subset = subset,
+		man_psize = man_psize)
