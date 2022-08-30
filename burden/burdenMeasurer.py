@@ -67,7 +67,8 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 			imp = IJ.openImage(f)
 			proj = ZProjector.run(imp, "max all")
 			proj.setC(int(fish_channel))
-			IJ.run(proj, "Find Edges", "slice");
+			if brightfield:
+				IJ.run(proj, "Find Edges", "slice");
 			IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
 	else:
 		for f in bfiles:
