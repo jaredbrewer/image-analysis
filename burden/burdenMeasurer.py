@@ -218,7 +218,7 @@ def burden_gui():
 	if subsetter:
 		subset = int(gui.getNextNumber())
 	else:
-		dump = gui.getNextNumber() # Another extraordinarly stupid source of error - every entry /must/ be accessed or you're going to frameshift.
+		dump = gui.getNextNumber() # Another extraordinarily stupid source of error - every entry /must/ be accessed or you're going to frameshift - was feeding 0 into man_psize when subset = False.
 		subset = 0
 	man_psize = int(gui.getNextNumber())
 
