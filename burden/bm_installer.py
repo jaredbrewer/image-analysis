@@ -1,3 +1,4 @@
+from ij import IJ
 import sys, os, shutil
 from os import path
 from ij.gui import GenericDialog
@@ -21,3 +22,12 @@ class_path = "$".join(final_path.rsplit(".", 1)) + ".class"
 
 if path.exists(class_path):
 	os.remove(class_path)
+
+plugin_path = path.join(os.getcwd(), "plugins/Burden")
+if not path.isdir(plugin_path):
+	os.mkdir(plugin_path)
+
+plugin_put = path.join(plugin_path, "Measure_Burden.py")
+shutil.copyfile(macro, plugin_put)
+
+IJ.run("Quit")

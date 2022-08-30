@@ -1,13 +1,14 @@
 from ij import IJ, ImagePlus
-from ij.measure import ResultsTable
+from ij.measure import ResultsTable, Measurements
 from ij.plugin.frame import RoiManager
 from ij.process import AutoThresholder
 from ij.plugin import ZProjector
+from ij.plugin.filter import ParticleAnalyzer
 from ij.gui import GenericDialog, NonBlockingGenericDialog
 import os, random, csv, sys
 from os import path
 
-def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False, subset = None, man_psize = 100000):
+def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False, subset = 0, man_psize = 100000):
 
 # directory is a string with path to the files you wish to analyze.
 # chan is an integer of the channel # with the bacteria.
@@ -23,33 +24,37 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 # subset is to run the function over a subset of the total number of images. Provide an integer value less than the total number of images in the directory. If subset is selected, the projections will automatically show.
 # man_psize is a manual particle size value for the "Analyze Particles..." function. Default has worked well for me, but can be changed if needed.
 
-	filenames = os.listdir(str(directory))
+	filenames = os.walk(str(directory))
 	bfiles = []
 
 	if not ext.startswith("."):
 		# Rigid binding of extension per se.
 		ext = "." + ext
-	for files in filenames:
-		if files.endswith(str(ext)):
-			file = path.join(str(directory), files)
-			bfiles.append(file)
+	for dirpath, subdir, files in filenames:
+		for file in files:
+			if file.endswith(str(ext)):
+				bfiles.append(path.join(dirpath, file))
 
 	# Make sure all our measurements are set properly.
 	IJ.run("Set Measurements...",
 	"area mean min limit display redirect=None decimal=3")
 
 	rm = RoiManager.getRoiManager()
+	rt = ResultsTable.getResultsTable()
 	data = []
 
 	if subset > len(bfiles):
 		print("The subset is greater than the number of files - running on whole directory.")
-		subset = None
+		subset = 0
 	if subset:
 		bfiles = bfiles[0:int(subset)]
 		proj_show = True
+	else:
+		subset = 0
 
 	valid_thresholds = [str(i + " dark") for i in AutoThresholder.getMethods()]
 	valid_thresholds.append("Try all")
+	valid_thresholds.append("None")
 
 	if screen_threshold == "Try all":
 		for f in bfiles:
@@ -69,29 +74,33 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 			imp = IJ.openImage(f)
 			if imp_show:
 				imp.show()
-			proj = ZProjector.run(imp, "max all")
+			if imp.getDimensions()[3] > 1:
+				proj = ZProjector.run(imp, "max all")
+			else:
+				proj = imp.duplicate()
 			if proj_show:
 				proj.show()
 			proj.setC(int(chan))
-
 			if screen_threshold not in valid_thresholds:
 				screen_threshold = "Otsu dark"
 
-			IJ.setAutoThreshold(proj, str(screen_threshold))
-			IJ.run(proj, "Analyze Particles...", "size="+str(man_psize)+".00-Infinity clear include add slice")
+			if screen_threshold != "None":
+				IJ.setAutoThreshold(proj, str(screen_threshold))
 
-			if rm.getCount() > 1: # This is the dumbest source of a downstream error I have ever encountered. rm.getCount is an attribute and rm.getCount() is a method = two different outcomes, but no evaluation error.
-				rm.runCommand(proj, "Select All")
-				rm.runCommand(proj, "Combine")
-				rm.runCommand(proj, "Delete")
-				rm.runCommand(proj, "Add")
+				IJ.run(proj, "Analyze Particles...", "size="+str(man_psize)+"-Infinity clear include add slice")
 
-			rm.select(proj, 0)
+				if rm.getCount() > 1: # This is the dumbest source of a downstream error I have ever encountered. rm.getCount is an attribute and rm.getCount() is a method = two different outcomes, but no evaluation error.
+					rm.runCommand(proj, "Select All")
+					rm.runCommand(proj, "Combine")
+					rm.runCommand(proj, "Delete")
+					rm.runCommand(proj, "Add")
 
-			IJ.run(proj, "Clear", "slice")
-			IJ.run(proj, "Select None", "")
-			IJ.run(proj, "Remove Overlay", "")
-			rm.reset()
+				rm.select(proj, 0)
+
+				IJ.run(proj, "Clear", "slice")
+				IJ.run(proj, "Select None", "")
+				IJ.run(proj, "Remove Overlay", "")
+				rm.reset()
 
 			# Build some logic for using the outline of the fish if provided. Brightfield images probably need even more work, but this will *probably* work for fluorescent channels.
 			if fish_channel:
@@ -101,7 +110,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 				if outline_threshold not in valid_thresholds:
 					outline_threshold = "Triangle dark"
 				IJ.setAutoThreshold(proj, outline_threshold)
-				IJ.run(proj, "Analyze Particles...", "size="+str(man_psize)+".00-Infinity clear include add slice")
+				IJ.run(proj, "Analyze Particles...", "size="+str(man_psize)+"-Infinity clear include add slice")
 				proj.setC(int(chan))
 				ra = rm.getRoisAsArray()
 				for r in ra:
@@ -119,9 +128,10 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 
 			IJ.setRawThreshold(proj, int(min_threshold), 2**int(proj.getBitDepth()) - 1)
 			IJ.run(proj, "Measure", "")
-			rt = ResultsTable.getResultsTable()
 			row = rt.getRowAsString(0).split("\t")
+			row.insert(0, path.join(imp.getOriginalFileInfo().directory, imp.getOriginalFileInfo().fileName))
 			headings = rt.getColumnHeadings().split("\t")
+			headings.insert(0, "file_path")
 			data.append(row)
 
 			if not imp_show:
@@ -152,6 +162,7 @@ def burden_gui():
 
 	values = [str(x + " dark") for x in AutoThresholder.getMethods()]
 	values.append("Try all")
+	values.append("None")
 
 	gui = NonBlockingGenericDialog("Bacterial Burden Measurement")
 	gui.addDirectoryField("Image Folder: ", " ~/Documents")
@@ -170,7 +181,7 @@ def burden_gui():
 	gui.addCheckbox("Brightfield Image?", False)
 	gui.addCheckbox("Only do a subset?", False)
 	gui.addToSameRow()
-	gui.addNumericField("If yes, how many images to try: ", 5)
+	gui.addNumericField("If yes, how many images to try: ", 0)
 	gui.addNumericField("Manual Particle Size: ", 100000)
 	gui.showDialog()
 	if gui.wasCanceled():
@@ -199,13 +210,14 @@ def burden_gui():
 		dump = gui.getNextChoice()
 		dump = gui.getNextBoolean()
 		fish_channel = None
-		outline_threshold = "Triangle"
+		outline_threshold = "Triangle dark"
 		brightfield = False
-	subset = gui.getNextBoolean()
-	if subset:
+	subsetter = gui.getNextBoolean()
+	if subsetter:
 		subset = int(gui.getNextNumber())
 	else:
-		subset = None
+		dump = gui.getNextNumber() # Another extraordinarly stupid source of error - every entry /must/ be accessed or you're going to frameshift.
+		subset = 0
 	man_psize = int(gui.getNextNumber())
 
 	burden(directory = directory,
@@ -221,3 +233,5 @@ def burden_gui():
 		brightfield = brightfield,
 		subset = subset,
 		man_psize = man_psize)
+
+burden_gui()
