@@ -32,7 +32,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 		ext = "." + ext
 	for dirpath, subdir, files in filenames:
 		for file in files:
-			if file.endswith(str(ext)):
+			if re.match(".*" + ext + ".*$", file):
 				bfiles.append(path.join(dirpath, file))
 
 	# Make sure all our measurements are set properly.
@@ -168,7 +168,7 @@ def burden_gui():
 
 	gui = NonBlockingGenericDialog("Bacterial Burden Measurement")
 	gui.addDirectoryField("Image Folder: ", " ~/Documents")
-	gui.addChoice("File Extension: ", [".czi", ".lif", ".lsm", ".tif", ".tiff", "Other"], ".tif")
+	gui.addChoice("File Extension: ", [".czi", ".lif", ".lsm", ".tif", "Other"], ".tif")
 	gui.addStringField("Custom File Extension: ", ".jpeg")
 	gui.addNumericField("Bacterial Fluorescence Channel #: ", 1)
 	gui.addNumericField("Minimum Threshold: ", 200)
