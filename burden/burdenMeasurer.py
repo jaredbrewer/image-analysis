@@ -32,7 +32,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 		ext = "." + ext
 	for dirpath, subdir, files in filenames:
 		for file in files:
-			if re.match(".*" + ext + ".*$", file):
+			if re.search(ext + ".*$", file):
 				bfiles.append(path.join(dirpath, file))
 
 	# Make sure all our measurements are set properly.
