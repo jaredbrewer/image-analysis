@@ -44,7 +44,9 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 	data = []
 
 	if subset > len(bfiles):
-		print("The subset is greater than the number of files - running on whole directory.")
+		wrong_subset = NonBlockingGenericDialog()
+		wrong_subset.addMessage("The subset is greater than the number of files - running on whole directory.")
+		wrong_subset.showDialog()
 		subset = 0
 	if subset:
 		bfiles = bfiles[0:int(subset)]
@@ -157,7 +159,8 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 		for datum in data:
 			writer.writerow(datum)
 
-	gui = GenericDialog("All Done! Output is located in " + directory)
+	gui = GenericDialog("Finished")
+	gui.addMessage("All Done! Output is located in " + directory)
 	gui.showDialog()
 
 def burden_gui():
@@ -187,6 +190,8 @@ def burden_gui():
 	gui.addNumericField("Manual Particle Size: ", 100000)
 	gui.showDialog()
 	if gui.wasCanceled():
+		canceled = GenericDialog("Canceled")
+		canceled.showDialog()
 		sys.exit(0)
 
 	directory = str(gui.getNextString())
