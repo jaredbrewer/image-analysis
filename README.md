@@ -81,7 +81,27 @@ These scripts are meant to facilitate analysis of _Mycobacterium marinum_ burden
 * (optional) ```outline_threshold``` - a string with one of the autothreshold algorithms for the fish outline
 * (optional) ```brightfield``` - boolean for if the ```fish_channel``` is the brightfield channel
 * (optional) ```subset``` - an integer for the number of images you wish to try (must be less than the total number in the directory)
-* (optional) ```man_psize``` - an integer for the area size cut off for ```Analyze Particles...```. The default is pretty robust at 5x magnification, but larger (or smaller) values may be more appropriate. You can get an idea by running the threshold and measuring the yolk and using ~ the resulting area value (rounding down is good)
+* (optional) ```man_psize``` - an integer for the area size cut off for ```Analyze Particles...```. The default is pretty robust at 5x magnification, but larger (or smaller) values may be more appropriate. You can get an idea by running the threshold and measuring the yolk and using ~ the resulting area value (rounding down is good).
+
+To run from a Python script:
+
+```
+from burdenMeasurer import burden
+
+burden(directory = str(),
+	chan = int(),
+	min_threshold = int(),
+	ext = str(),
+	screen_threshold = str(),
+	proj_save = bool(),
+	proj_show = bool(),
+	imp_show = bool(),
+	fish_channel = int(),
+	outline_threshold = str(),
+	brightfield = bool(),
+	subset = int(),
+	man_psize = int())
+```
 
 __custBurdenMeasure.py__ is a more manual, but slightly stripped down, (and thus more transparent) implementation of the same logic that allows you to alter various parameters. Not recommended for casual users, but worthwhile for more advanced users. Could be useful for troubleshooting some of the intermediate steps.
 
