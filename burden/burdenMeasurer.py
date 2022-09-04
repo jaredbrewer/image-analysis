@@ -27,12 +27,12 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 	filenames = os.walk(str(directory))
 	bfiles = []
 
-	if not ext.startswith("."):
+	if ext.startswith("."):
 		# Rigid binding of extension per se.
-		ext = "." + ext
+		ext = ext.replace(".", "")
 	for dirpath, subdir, files in filenames:
 		for file in files:
-			if re.search(ext + ".*$", file):
+			if re.search("\." + ext.lower() + "\S*$", file.lower()):
 				bfiles.append(path.join(dirpath, file))
 
 	# Make sure all our measurements are set properly.
