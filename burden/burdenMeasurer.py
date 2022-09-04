@@ -5,7 +5,7 @@ from ij.process import AutoThresholder
 from ij.plugin import ZProjector
 from ij.plugin.filter import ParticleAnalyzer
 from ij.gui import GenericDialog, NonBlockingGenericDialog
-import os, random, csv, sys
+import os, random, csv, sys, re
 from os import path
 
 def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", proj_save = False, proj_show = False, imp_show = False, fish_channel = None, outline_threshold = "Triangle dark", brightfield = False, subset = 0, man_psize = 100000):
@@ -44,7 +44,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 	data = []
 
 	if subset > len(bfiles):
-		wrong_subset = NonBlockingGenericDialog()
+		wrong_subset = NonBlockingGenericDialog("Subset Error")
 		wrong_subset.addMessage("The subset is greater than the number of files - running on whole directory.")
 		wrong_subset.showDialog()
 		subset = 0
@@ -64,7 +64,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 			proj = ZProjector.run(imp, "max all")
 			proj.setC(int(chan))
 			IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
-	elif outline_threshold == "Try all":
+	if outline_threshold == "Try all":
 		for f in bfiles:
 			imp = IJ.openImage(f)
 			proj = ZProjector.run(imp, "max all")
@@ -175,6 +175,7 @@ def burden_gui():
 	gui.addStringField("Custom File Extension: ", ".jpeg")
 	gui.addNumericField("Bacterial Fluorescence Channel #: ", 1)
 	gui.addNumericField("Minimum Threshold: ", 200)
+	gui.addMessage("'Try all' requires a subset to be selected - the fewer the better. Default = 5")
 	gui.addChoice("Background Removal Threshold: ", values, "Otsu dark")
 	gui.addCheckbox("Save MIPs?", False)
 	gui.addCheckbox("Show MIPs?", False)
@@ -225,6 +226,14 @@ def burden_gui():
 	else:
 		dump = gui.getNextNumber() # Another extraordinarily stupid source of error - every entry /must/ be accessed or you're going to frameshift - was feeding 0 into man_psize when subset = False.
 		subset = 0
+	if screen_threshold == "Try all":
+		subsetter = True
+		if not subset:
+			subset = 5
+	if outline_threshold == "Try all":
+		subsetter = True
+		if not subset:
+			subset = 5
 	man_psize = int(gui.getNextNumber())
 
 	burden(directory = directory,
