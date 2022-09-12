@@ -30,10 +30,13 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 	if ext.startswith("."):
 		# Rigid binding of extension per se.
 		ext = ext.replace(".", "")
+	# This logic is a little over-complex for the task, but essentially I want to pull out the extension and then use it to match the end of the line. Why do it in two steps? It makes the code more flexible for ".tif" vs ".TIFF" and could allow future use of the mext in downstream applications if needed.
 	for dirpath, subdir, files in filenames:
 		for file in files:
-			if re.search("\." + ext.lower() + "\S*$", file.lower()):
-				bfiles.append(path.join(dirpath, file))
+			mext = re.search("\." + ext + "\S*$", file, re.IGNORECASE)
+			if mext:
+				if file.endswith(mext.group()):
+					bfiles.append(path.join(dirpath, file))
 
 	# Make sure all our measurements are set properly.
 	IJ.run("Set Measurements...",
@@ -130,6 +133,13 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 			else:
 				IJ.run(proj, "Select All", "")
 
+			# We want this to work for any bit depth image, but due to limitations of the underlying plugin, may only work for 16-bit and lower images. Something weird could happen with 24-bit RGB images, but I can't stop people from doing weird things.
+
+			if proj.getBitDepth() == 24:
+				IJ.run(proj, "8-bit", "")
+			elif proj.getBitDepth() > 16:
+				IJ.run(proj, "16-bit", "")
+
 			IJ.setRawThreshold(proj, int(min_threshold), 2**int(proj.getBitDepth()) - 1)
 			IJ.run(proj, "Measure", "")
 			row = rt.getRowAsString(0).split("\t")
@@ -152,6 +162,8 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 				IJ.run("Collect Garbage", "")
 			else:
 				pass
+
+	# Write out the results to a CSV file for further processing (probably in R, but also fine for other options.)
 
 	with open(path.join(directory, "burden.csv"), "w") as csvfile:
 		writer = csv.writer(csvfile)
@@ -224,7 +236,7 @@ def burden_gui():
 	if subsetter:
 		subset = int(gui.getNextNumber())
 	else:
-		dump = gui.getNextNumber() # Another extraordinarily stupid source of error - every entry /must/ be accessed or you're going to frameshift - was feeding 0 into man_psize when subset = False.
+		dump = gui.getNextNumber() # Another extraordinarily stupid source of error - every entry /must/ be accessed or you're going to frameshift - was feeding 0 into man_psize when subset = False and getting a correspondingly bad result (all points included).
 		subset = 0
 	if screen_threshold == "Try all":
 		subsetter = True
