@@ -61,23 +61,23 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 	valid_thresholds.append("Try all")
 	valid_thresholds.append("None")
 
-	if screen_threshold == "Try all":
-		for f in bfiles:
-			imp = IJ.openImage(f)
-			proj = ZProjector.run(imp, "max all")
-			proj.setC(int(chan))
-			IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
-	if outline_threshold == "Try all":
-		for f in bfiles:
-			imp = IJ.openImage(f)
-			proj = ZProjector.run(imp, "max all")
-			proj.setC(int(fish_channel))
-			if brightfield:
-				IJ.run(proj, "Find Edges", "slice");
-			IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
+	if screen_threshold or outline_threshold == "Try all":
+		if screen_threshold == "Try all":
+			for f in bfiles:
+				imp = IJ.openImage(f)
+				proj = ZProjector.run(imp, "max all")
+				proj.setC(int(chan))
+				IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
+		if outline_threshold == "Try all":
+			for f in bfiles:
+				imp = IJ.openImage(f)
+				proj = ZProjector.run(imp, "max all")
+				proj.setC(int(fish_channel))
+				if brightfield:
+					IJ.run(proj, "Find Edges", "slice");
+				IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
 	else:
 		for f in bfiles:
-
 			imp = IJ.openImage(f)
 			if imp_show:
 				imp.show()
@@ -135,9 +135,9 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 
 			# We want this to work for any bit depth image, but due to limitations of the underlying plugin, may only work for 16-bit and lower images. Something weird could happen with 24-bit RGB images, but I can't stop people from doing weird things.
 
-			if proj.getBitDepth() == 24:
+			if proj.getBitDepth() == 24: # This should only be color images - seems a little risky.
 				IJ.run(proj, "8-bit", "")
-			elif proj.getBitDepth() > 16:
+			elif proj.getBitDepth() > 16: # The thresholds don't work for 32-bit images and FIJI doesn't really understand 10 or 12 bit images.
 				IJ.run(proj, "16-bit", "")
 
 			IJ.setRawThreshold(proj, int(min_threshold), 2**int(proj.getBitDepth()) - 1)
