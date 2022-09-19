@@ -77,7 +77,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 					IJ.run(proj, "Find Edges", "slice");
 				IJ.run(proj, "Auto Threshold", "method=[Try all] dark")
 	else:
-		for f in bfiles:
+		for i, f in enumerate(bfiles):
 			imp = IJ.openImage(f)
 			if imp_show:
 				imp.show()
@@ -144,8 +144,9 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 			IJ.run(proj, "Measure", "")
 			row = rt.getRowAsString(0).split("\t")
 			row.insert(0, path.join(imp.getOriginalFileInfo().directory, imp.getOriginalFileInfo().fileName))
-			headings = rt.getColumnHeadings().split("\t")
-			headings.insert(0, "file_path")
+			if i == 0:
+				headings = rt.getColumnHeadings().split("\t")
+				headings.insert(0, "file_path")
 			data.append(row)
 
 			if not imp_show:
@@ -163,13 +164,13 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 			else:
 				pass
 
-	# Write out the results to a CSV file for further processing (probably in R, but also fine for other options.)
+		# Write out the results to a CSV file for further processing (probably in R, but also fine for other options.)
 
-	with open(path.join(directory, "burden.csv"), "w") as csvfile:
-		writer = csv.writer(csvfile)
-		writer.writerow(headings)
-		for datum in data:
-			writer.writerow(datum)
+		with open(path.join(directory, "burden.csv"), "w") as csvfile:
+			writer = csv.writer(csvfile)
+			writer.writerow(headings)
+			for datum in data:
+				writer.writerow(datum)
 
 	gui = GenericDialog("Finished")
 	gui.addMessage("All Done! Output is located in " + directory)

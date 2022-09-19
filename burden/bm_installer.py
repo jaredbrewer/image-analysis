@@ -23,7 +23,7 @@ class_path = "$".join(final_path.rsplit(".", 1)) + ".class"
 if path.exists(class_path):
 	os.remove(class_path)
 
-plugin_path = path.join(os.getcwd(), "plugins/Burden")
+plugin_path = path.join(os.getcwd(), "plugins", "Burden")
 if not path.isdir(plugin_path):
 	os.mkdir(plugin_path)
 
