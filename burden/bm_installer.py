@@ -6,16 +6,17 @@ from ij.gui import GenericDialog, NonBlockingGenericDialog
 if not path.isdir(sys.path[0]):
 	os.mkdir(sys.path[0])
 
-gui = GenericDialog("Current Macro Location: ")
-gui.addFileField("Macro Path: ", "~/Documents")
-gui.showDialog()
+finder = path.join(path.dirname(path.realpath(__file__)), "burdenMeasurer.py")
+func = path.join(path.dirname(path.realpath(__file__)), "burden.py")
 
-macro = str(gui.getNextString()) # File path to where the macro was downloaded.
-base = path.basename(macro)
+# gui = GenericDialog("Current Macro Location: ")
+# gui.addFileField("Macro Path: ", "~/Documents")
+# gui.showDialog()
 
+base = path.basename(func)
 final_path = path.join(sys.path[0], base)
 
-shutil.copyfile(macro, final_path)
+shutil.copyfile(func, final_path)
 class_path = "$".join(final_path.rsplit(".", 1)) + ".class"
 
 if path.exists(class_path):
@@ -26,7 +27,7 @@ if not path.isdir(plugin_path):
 	os.mkdir(plugin_path)
 
 plugin_put = path.join(plugin_path, "Measure_Burden.py")
-shutil.copyfile(macro, plugin_put)
+shutil.copyfile(finder, plugin_put)
 
 gui = NonBlockingGenericDialog("Quit?")
 gui.addMessage("FIJI/ImageJ needs to quit to add menu items. Quit now?")
