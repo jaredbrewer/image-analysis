@@ -61,7 +61,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 	valid_thresholds.append("Try all")
 	valid_thresholds.append("None")
 
-	if screen_threshold or outline_threshold == "Try all":
+	if screen_threshold == "Try all" or outline_threshold == "Try all":
 		if screen_threshold == "Try all":
 			for f in bfiles:
 				imp = IJ.openImage(f)

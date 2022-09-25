@@ -1,9 +1,7 @@
 from ij import IJ
 import sys, os, shutil
 from os import path
-from ij.gui import GenericDialog
-
-print(sys.path)
+from ij.gui import GenericDialog, NonBlockingGenericDialog
 
 if not path.isdir(sys.path[0]):
 	os.mkdir(sys.path[0])
@@ -30,4 +28,14 @@ if not path.isdir(plugin_path):
 plugin_put = path.join(plugin_path, "Measure_Burden.py")
 shutil.copyfile(macro, plugin_put)
 
-IJ.run("Quit")
+gui = NonBlockingGenericDialog("Quit?")
+gui.addMessage("FIJI/ImageJ needs to quit to add menu items. Quit now?")
+gui.setOKLabel("Quit now")
+gui.setCancelLabel("Quit later")
+
+gui.showDialog()
+
+if gui.wasOKed():
+	IJ.run("Quit")
+elif gui.wasCanceled():
+	pass
