@@ -9,10 +9,6 @@ if not path.isdir(sys.path[0]):
 finder = path.join(path.dirname(path.realpath(__file__)), "burdenMeasurer.py")
 func = path.join(path.dirname(path.realpath(__file__)), "burden.py")
 
-# gui = GenericDialog("Current Macro Location: ")
-# gui.addFileField("Macro Path: ", "~/Documents")
-# gui.showDialog()
-
 base = path.basename(func)
 final_path = path.join(sys.path[0], base)
 
