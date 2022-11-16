@@ -7,13 +7,13 @@ from os import path
 gui = GenericDialog("File Directory: ")
 gui.addMessage("This script assumes (a) you have more than one channel, (b) this is a time lapse and (c) this has multiple stage positions.  If any of these are not true, this will not (currently) work for you. Let me know if you'd like to see more of that kind of functionality.")
 gui.addDirectoryField("Individual Channels: ", "~/Documents")
-# gui.addCheckBox("Multiple Scenes?", False)
-# gui.addCheckbox("Multiple Time Points?", False)
+gui.addCheckBox("Multiple Scenes?", True)
+gui.addCheckbox("Multiple Time Points?", True)
 gui.showDialog()
 
 basedir = str(gui.getNextString())
-# scene = gui.getNextBoolean()
-# time = gui.getNextBoolean()
+multiscene = gui.getNextBoolean()
+timelapse = gui.getNextBoolean()
 
 outputdir = basedir + "/comps/"
 if not path.isdir(outputdir):
@@ -122,17 +122,52 @@ colors = [red_pick, green_pick, blue_pick, grey_pick, cyan_pick, magenta_pick, y
 chans.remove("None")
 
 for name in names:
-	for scene in scenes:
-		title = "_".join([name, scene])
-		combo_dict = {}
-		color_picker = []
+	if multiscene:
+		for scene in scenes:
+			title = "_".join([name, scene])
+			combo_dict = {}
+			color_picker = []
 			for chan in chans:
 				stills = []
+				if timelapse:
+					for time in times:
+						# Regenerate the name from defined parts -
+						still = path.join(basedir, "_".join([name, chan, "s" + scene, "t" + time + ext]))
+						stills.append(ImagePlus(still))
+					combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
+				else:
+					still = path.join(basedir, "_".join([name, chan, "s" + scene + ext]))
+					stills.append(ImagePlus(still))
+			for color in colors:
+				if color != "None":
+					color_picker.append(ImagePlus(combo_dict[color]))
+				if color == "None"
+					color_picker.append(None)
+			merge = RGBStackMerge.mergeChannels(color_picker, False)
+			proj = ZProjector.run(merge, "max all")
+			out = path.join(outputdir, title)
+			del title
+			IJ.saveAs(proj, "Tiff", out)
+			rand = random.randint(1, 100)
+			if rand > 85:
+				IJ.run("Collect Garbage", "")
+			else:
+				pass
+	else:
+		title = name
+		combo_dict = {}
+		color_picker = []
+		for chan in chans:
+			stills = []
+			if timelapse:
 				for time in times:
-					# Regenerate the name from defined parts -
-					still = path.join(basedir, "_".join([name, chan, "s" + scene, "t" + time + ext])
+						# Regenerate the name from defined parts -
+					still = path.join(basedir, "_".join([name, chan, "s" + scene, "t" + time + ext]))
 					stills.append(ImagePlus(still))
 				combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
+			else:
+				still = path.join(basedir, "_".join([name, chan, "s" + scene + ext]))
+				stills.append(ImagePlus(still))
 		for color in colors:
 			if color != "None":
 				color_picker.append(ImagePlus(combo_dict[color]))
