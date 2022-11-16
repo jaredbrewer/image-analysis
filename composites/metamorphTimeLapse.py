@@ -5,14 +5,15 @@ import os, sys, random, re
 from os import path
 
 gui = GenericDialog("File Directory: ")
+gui.addMessage("This script assumes (a) you have more than one channel, (b) this is a time lapse and (c) this has multiple stage positions.  If any of these are not true, this will not (currently) work for you. Let me know if you'd like to see more of that kind of functionality.")
 gui.addDirectoryField("Individual Channels: ", "~/Documents")
-gui.addCheckBox("Multiple Scenes?", False)
-gui.addCheckbox("Multiple Time Points?", False)
+# gui.addCheckBox("Multiple Scenes?", False)
+# gui.addCheckbox("Multiple Time Points?", False)
 gui.showDialog()
 
 basedir = str(gui.getNextString())
-scene = gui.getNextBoolean()
-time = gui.getNextBoolean()
+# scene = gui.getNextBoolean()
+# time = gui.getNextBoolean()
 
 outputdir = basedir + "/comps/"
 if not path.isdir(outputdir):
@@ -79,12 +80,44 @@ yellow_pick = str(gui.getNextChoice())
 
 colors = [red_pick, green_pick, blue_pick, grey_pick, cyan_pick, magenta_pick, yellow_pick]
 
-color_picker = []
-for color in colors:
-	if color != "None":
-		color_picker.append(ImagePlus(combo_dict[color]))
-	if color == "None"
-		color_picker.append(None)
+# color_picker = []
+# for color in colors:
+# 	if color != "None":
+# 		color_picker.append(ImagePlus(combo_dict[color]))
+# 	if color == "None"
+# 		color_picker.append(None)
+
+# from ij.gui import GenericDialog
+# from ij import IJ, ImagePlus
+
+#chans = ["A", "B", "C"]
+#
+#chan_pairs = ""
+#for chan in chans:
+#	chan_pairs += "C" + str(int(chans.index(chan) + 1)) + ": " + chan + "\n"
+
+# combo_dict = {}
+# colors = ["/Users/jared/Documents/Figure 1/fish2_GFP.tif", "None", "None", "None", "None", "None", "/Users/jared/Documents/Figure 1/fish3_GFP.tif"]
+#
+# color_picker = []
+# for color in colors:
+# 	if color != "None":
+# 		color_picker.append(ImagePlus(color))
+# 	if color == "None":
+# 		color_picker.append(None)
+#
+# print(color_picker)
+
+#print(chan_pairs)
+#gui = GenericDialog("Colors")
+#gui.addMessage(chan_pairs)
+#gui.addChoice("Red", chans, None)
+#
+#gui.showDialog()
+#
+#chan_picker = gui.getNextChoice()
+#print(chan_picker)
+
 
 chans.remove("None")
 
@@ -106,9 +139,10 @@ for name in names:
 			if color == "None"
 				color_picker.append(None)
 		merge = RGBStackMerge.mergeChannels(color_picker, False)
+		proj = ZProjector.run(merge, "max all")
 		out = path.join(outputdir, title)
 		del title
-		IJ.saveAs(merge, "Tiff", out)
+		IJ.saveAs(proj, "Tiff", out)
 		rand = random.randint(1, 100)
 		if rand > 85:
 			IJ.run("Collect Garbage", "")
