@@ -1,5 +1,5 @@
 from ij import IJ, ImagePlus
-from ij.plugin import ZProjector, RGBStackMerge, Concatenator, Duplicator, HyperStackConverter
+from ij.plugin import ZProjector, RGBStackMerge, Concatenator, Duplicator
 from ij.gui import GenericDialog, NonBlockingGenericDialog
 import os, sys, random, re
 from os import path
@@ -120,7 +120,8 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 			title = "_".join([name, str(scene)])
 		return title
 
-	def stiller(stills, timelapse, combo_dict, times):
+	def stiller(timelapse, combo_dict, name, chan, times, scene = "scene"):
+		stills = []
 		if timelapse:
 			for time in times:
 				still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
@@ -171,39 +172,14 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				print(title)
 				combo_dict = {}
 				for key, chan in chans.items():
-					stills = []
-					for time in times:
-						still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
-						if path.isfile(still):
-							still = ImagePlus(still)
-							if still.getNSlices() > 1:
-								still = ZProjector.run(still, "max")
-								stills.append(still)
-							else:
-								stills.append(still)
-					if stills:
-						if timelapse:
-							combo_dict[key] = Concatenator.run(stills)
-						else:
-							combo_dict[key] = ImagePlus(still)
+					stiller(timelapse, combo_dict, name, chan, times, scene)
 				if combo_dict:
 					merge_and_save(combo_dict, colors, title, outputdir, opener)
 		elif timelapse:
 			title = name
 			combo_dict = {}
 			for key, chan in chans.items():
-				stills = []
-				for time in times:
-					still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
-					if path.isfile(still):
-						still = ImagePlus(still)
-						num_stacks.append(still.getNSlices())
-						stills.append(still)
-				if stills:
-					if timelapse:
-						combo_dict[key] = Concatenator.run(stills)
-					else:
-						combo_dict[key] = ImagePlus(still)
+				stiller(timelapse, combo_dict, name, chan, times, scene)
 			if combo_dict:
 				merge_and_save(combo_dict, colors, title, outputdir, opener)	
 		elif multiscene:
@@ -212,20 +188,7 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				title = titler(nder, name, scene)
 				combo_dict = {}
 				for key, chan in chans.items():
-					stills = []
-					still = path.join(basedir, "_".join([name, chan, "s" + str(scene) + "".join(ext)]))
-					if path.isfile(still):
-						still = ImagePlus(still)
-						if still.getNSlices() > 1:
-							still = ZProjector.run(still, "max")
-							stills.append(still)
-						else:
-							stills.append(still)
-					if stills:
-						if timelapse:
-							combo_dict[key] = Concatenator.run(stills)
-						else:
-							combo_dict[key] = ImagePlus(still)
+					stiller(timelapse, combo_dict, name, chan, times, scene)
 				if combo_dict:
 					merge_and_save(combo_dict, colors, title, outputdir, opener)
 		else:
@@ -233,20 +196,7 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 			combo_dict = {}
 			num_stacks = []
 			for key, chan in chans.items():
-				stills = []
-				still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
-				if path.isfile(still):
-					still = ImagePlus(still)
-					if still.getNSlices() > 1:
-						still = ZProjector.run(still, "max")
-						stills.append(still)
-					else:
-						stills.append(still)
-				if stills:
-					if timelapse:
-						combo_dict[key] = Concatenator.run(stills)
-					else:
-						combo_dict[key] = ImagePlus(still)
+				stiller(timelapse, combo_dict, name, chan, times, scene)
 			if combo_dict:
 				merge_and_save(combo_dict, colors, title, outputdir, opener)
 
