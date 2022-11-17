@@ -120,7 +120,33 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 			title = "_".join([name, str(scene)])
 		return title
 
+	def stiller(stills, timelapse, combo_dict, times):
+		if timelapse:
+			for time in times:
+				still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
+				if path.isfile(still):
+					still = ImagePlus(still)
+					if still.getNSlices() > 1:
+						still = ZProjector.run(still, "max")
+						stills.append(still)
+					else:
+						stills.append(still)
+			if stills:
+				combo_dict[key] = Concatenator.run(stills)
+		else:
+			still = path.join(basedir, "_".join([name, chan, "s" + str(scene) + "".join(ext)]))
+			if path.isfile(still):
+				still = ImagePlus(still)
+				if still.getNSlices() > 1:
+					still = ZProjector.run(still, "max")
+					stills.append(still)
+				else:
+					stills.append(still)
+			if stills:
+				combo_dict[key] = ImagePlus(still)
+
 	def merge_and_save(combo_dict, colors, title, outputdir, opener):
+		color_picker = []
 		for color in colors:
 			if color != "None":
 				color_picker.append(combo_dict[color])
@@ -228,326 +254,3 @@ metamorpher(names, chans, scenes, times, ext, colors, timelapse, multiscene, ope
 
 gui = GenericDialog("All Done!")
 gui.showDialog()
-
-#def merge_and_save(combo_dict = combo_dict, colors = colors, title = title, outputdir = outputdir):
-#	if combo_dict:
-#		color_picker = []
-#		for color in colors:
-#			if color != "None":
-#				color_picker.append(combo_dict[color])
-#			elif color == "None":
-#				color_picker.append(None)
-#		merge = RGBStackMerge.mergeChannels(color_picker, False)
-#		proj = ZProjector.run(merge, "max all")
-#		out = path.join(outputdir, title)
-#		del title
-#		IJ.saveAs(proj, "Tiff", out)
-#		rand = random.randint(1, 100)
-#		if rand > 85:
-#			IJ.run("Collect Garbage", "")
-#		else:
-#			pass
-#
-#def tl_logic(still, name, chan, scene, time, ext, timelapse = True, multiscene = True):
-#
-#	def checker(chan, still):
-#		if path.isfile(still):
-#			still = ImagePlus(still)
-#			num_stacks.append(still.getNSlices())
-#			stills.append(still)
-##			combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
-#			
-#	def stiller(stills, num_stacks, timelapse):
-#		if stills:
-#			max_stacks = max(num_stacks)
-#			for still in stills:
-#				if still.getNSlices() < max_stacks:
-#					bt = still.getTitle()
-#					bd = str(still.getBitDepth()) + "-bit black"
-#					blank = IJ.createImage(bt, bd,
-#						still.getWidth(), 
-#						still.getHeight(), 
-#						still.getNChannels(), 
-#						max_stacks,
-#						still.getNFrames())
-#					for i in range(0, still.getNSlices() + 1):
-#						still.setSlice(i)
-#						still.copy()
-#						blank.setSlice(i)
-#						blank.paste()
-#					imp2 = blank.duplicate()
-#					stills[stills.index(still)] = imp2
-#			if timelapse:
-#				combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-#			else:
-#				combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
-#		
-#	if timelapse and multiscene:
-#		for time in times:
-#			still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
-#			checker(chan, still)
-#			if stills:
-#				max_stacks = max(num_stacks)
-#				for still in stills:
-#					if still.getNSlices() < max_stacks:
-#						bt = still.getTitle()
-#						bd = str(still.getBitDepth()) + "-bit black"
-#						blank = IJ.createImage(bt, bd,
-#							still.getWidth(), 
-#							still.getHeight(), 
-#							still.getNChannels(), 
-#							max_stacks,
-#							still.getNFrames())
-#						for i in range(0, still.getNSlices() + 1):
-#							still.setSlice(i)
-#							still.copy()
-#							blank.setSlice(i)
-#							blank.paste()
-#						imp2 = blank.duplicate()
-#						stills[stills.index(still)] = imp2
-#				combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-#	elif timelapse:
-#		for time in times:
-#			still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
-#			checker(chan, still)
-#	elif multiscene:
-#		still = path.join(basedir, "_".join([name, chan, "s" + str(scene) + "".join(ext)]))
-#		checker(chan, still)
-#	else:
-#		still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
-#		checker(chan, still)
-
- 
-#def stiller(stills, num_stacks, timelapse):
-#	max_stacks = max(num_stacks)
-#	for still in stills:
-#		if still.getNSlices() < max_stacks:
-#			bt = still.getTitle()
-#			bd = str(still.getBitDepth()) + "-bit black"
-#			blank = IJ.createImage(bt, bd,
-#				still.getWidth(), 
-#				still.getHeight(), 
-#				still.getNChannels(), 
-#				max_stacks,
-#				still.getNFrames())
-#			for i in range(0, still.getNSlices() + 1):
-#				still.setSlice(i)
-#				still.copy()
-#				blank.setSlice(i)
-#				blank.paste()
-#			imp2 = blank.duplicate()
-#			stills[stills.index(still)] = imp2
-#	if timelapse:
-#		combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-#	else:
-#		combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
-
-#for name in names:
-#	if multiscene:
-#		for scene in scenes:
-#			combo_dict = {}
-#			num_stacks = []
-#			for chan in chans:
-#				title = "_".join([name, str(scene)])
-#				stills = []
-#				if timelapse:
-#					for time in times:
-#						# Regenerate the name from defined parts -
-#						still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
-#						if path.isfile(still):
-#							still = ImagePlus(still)
-#							num_stacks.append(still.getNSlices())
-#							stills.append(still)
-#					if stills:
-#						max_stacks = max(num_stacks)
-#						for still in stills:
-#							if still.getNSlices() < max_stacks:
-#								bt = still.getTitle()
-#								bd = str(still.getBitDepth()) + "-bit black"
-#								blank = IJ.createImage(bt, bd,
-#									still.getWidth(), 
-#									still.getHeight(), 
-#									still.getNChannels(), 
-#									max_stacks,
-#									still.getNFrames())
-#								for i in range(0, still.getNSlices() + 1):
-#									still.setSlice(i)
-#									still.copy()
-#									blank.setSlice(i)
-#									blank.paste()
-#								imp2 = blank.duplicate()
-#								stills[stills.index(still)] = imp2
-#						combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-#			merge_and_save(combo_dict, colors, title, outputdir)
-#		else:
-#			title = name
-#			combo_dict = {}
-#			color_picker = []
-#			stills = []
-#			if timelapse:
-#				for time in times:
-#					# Regenerate the name from defined parts -
-#					still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
-#					if path.isfile(still):
-#						stills.append(ImagePlus(still))
-#				if stills:
-#					combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-#			else:
-#				still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
-#				if path.isfile(still):
-#					combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
-#			merge_and_save(combo_dict, colors, title, outputdir)
-
-#	def nd_titler(nder, name, scene, title):
-#		if nder:
-#			if path.isfile(path.join(basedir, name + ".nd")):
-#				pos_dict = {}
-#				with open(path.join(basedir, name + ".nd"), "r") as nd_file:
-#					for line in nd_file.readlines():
-#						if line.startswith("\"Stage"):
-#							pos_dict[line.split(",")[0].strip("\"\n").replace("Stage", "")] = line.split(",")[1].strip("\"\n\r ")
-#				scene_name = pos_dict.get(str(scene))
-#				if scene_name:
-#					title += "_".join([name, scene_name])
-#		else:
-#			title += "_".join([name, str(scene)])
-
-#				title = ""
-#				nd_titler(nder, name, scene, title)
-#				if nder:
-#					if path.isfile(path.join(basedir, name + ".nd")):
-#						pos_dict = {}
-#						with open(path.join(basedir, name + ".nd"), "r") as nd_file:
-#							for line in nd_file.readlines():
-#								if line.startswith("\"Stage"):
-#									pos_dict[line.split(",")[0].strip("\"\n").replace("Stage", "")] = line.split(",")[1].strip("\"\n\r ")
-#						scene_name = pos_dict.get(str(scene))
-#						if scene_name:
-#							title = "_".join([name, scene_name])
-#							print(title)
-#				else:
-#				if nder:
-#					if path.isfile(path.join(basedir, name + ".nd")):
-#						pos_dict = {}
-#						with open(path.join(basedir, name + ".nd"), "r") as nd_file:
-#							for line in nd_file.readlines():
-#								if line.startswith("\"Stage"):
-#									pos_dict[line.split(",")[0].strip("\"\n").replace("Stage", "")] = line.split(",")[1].strip("\"\n\r ")
-#						if str(scene) in pos_dict:
-#							scene_name = pos_dict[str(scene)]
-#							title = "_".join([name, scene_name])
-#							print(title)
-#					else:
-#						title = "_".join([name, str(scene)])
-#				else:
-#					title = "_".join([name, str(scene)])
-#	
-
-#def tl_logic():
-#
-#	def checker():
-#		if path.isfile(still):
-#			combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
-#			
-#	if timelapse and multiscene:
-#		for time in times:
-#			still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
-#			checker()
-#	elif timelapse:
-#		for time in times:
-#			still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
-#			checker()
-#	elif multiscene:
-#		still = path.join(basedir, "_".join([name, chan, "s" + str(scene) + "".join(ext)]))
-#		checker()
-#	else:
-#		still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
-#		checker()
-#
-#for name in names:
-#	if multiscene:
-#		for scene in scenes:
-#			color_picker = []
-#			combo_dict = {}
-#			num_stacks = []
-#			for chan in chans:
-#				title = "_".join([name, str(scene)])
-#				stills = []
-#				if timelapse:
-#					for time in times:
-#						# Regenerate the name from defined parts -
-#						still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
-#						if path.isfile(still):
-#							still = ImagePlus(still)
-#							num_stacks.append(still.getNSlices())
-#							stills.append(still)
-#					if stills:
-#						max_stacks = max(num_stacks)
-#						for still in stills:
-#							if still.getNSlices() < max_stacks:
-#								bt = still.getTitle()
-#								bd = str(still.getBitDepth()) + "-bit black"
-#								blank = IJ.createImage(bt, bd,
-#									still.getWidth(), 
-#									still.getHeight(), 
-#									still.getNChannels(), 
-#									max_stacks,
-#									still.getNFrames())
-#								for i in range(0, still.getNSlices() + 1):
-#									still.setSlice(i)
-#									still.copy()
-#									blank.setSlice(i)
-#									blank.paste()
-#								imp2 = blank.duplicate()
-#								stills[stills.index(still)] = imp2
-#						combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-#			if combo_dict:
-#				print(combo_dict)
-#				for color in colors:
-#					if color != "None":
-#						color_picker.append(combo_dict[color])
-#					elif color == "None":
-#						color_picker.append(None)
-#				merge = RGBStackMerge.mergeChannels(color_picker, False)
-#				proj = ZProjector.run(merge, "max all")
-#				out = path.join(outputdir, title)
-#				del title
-#				IJ.saveAs(proj, "Tiff", out)
-#				rand = random.randint(1, 100)
-#				if rand > 85:
-#					IJ.run("Collect Garbage", "")
-#				else:
-#					pass
-#		else:
-#			title = name
-#			combo_dict = {}
-#			color_picker = []
-#			stills = []
-#			if timelapse:
-#				for time in times:
-#					# Regenerate the name from defined parts -
-#					still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
-#					if path.isfile(still):
-#						stills.append(ImagePlus(still))
-#				if stills:
-#					combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-#			else:
-#				still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
-#				if path.isfile(still):
-#					combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
-#			if combo_dict:
-#				for color in colors:
-#					if color != "None":
-#						color_picker.append(combo_dict[color])
-#					if color == "None":
-#						color_picker.append(None)
-#				merge = RGBStackMerge.mergeChannels(color_picker, False)
-#				proj = ZProjector.run(merge, "max all")
-#				out = path.join(outputdir, title)
-#				del title
-#				IJ.saveAs(proj, "Tiff", out)
-#				rand = random.randint(1, 100)
-#				if rand > 85:
-#					IJ.run("Collect Garbage", "")
-#				else:
-#					pass	
