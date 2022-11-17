@@ -4,7 +4,6 @@ from ij.gui import GenericDialog, NonBlockingGenericDialog
 import os, sys, random, re
 from os import path
 
-<<<<<<< HEAD
 gui = GenericDialog("Metamorph File Compiler")
 gui.addMessage("Version 0.1a, 17 November 2022")
 gui.addDirectoryField("Files Directory: ", "~/Documents")
@@ -12,23 +11,15 @@ gui.addCheckbox("Multiple Scenes?", True)
 gui.addCheckbox("Multiple Time Points?", True)
 gui.addCheckbox("Show Merged Image?", False)
 gui.addCheckbox("Use Metadata from .nd File?", False)
-=======
-gui = GenericDialog("File Directory: ")
-gui.addMessage("This script assumes: \n (a) you have more than one channel, \n (b) this is a time lapse and \n (c) this has multiple stage positions.  \n If any of these are not true, this will not (currently) work for you. \n Let me know if you'd like to see more of that kind of functionality.")
-gui.addDirectoryField("Individual Channels: ", "~/Documents")
-gui.addCheckbox("Multiple Scenes?", True)
-gui.addCheckbox("Multiple Time Points?", True)
->>>>>>> 5a0826858ff2ad1ef736f2782cb48258a0a7df2f
+
 gui.showDialog()
 
 basedir = str(gui.getNextString())
 multiscene = gui.getNextBoolean()
 timelapse = gui.getNextBoolean()
-<<<<<<< HEAD
+
 opener = gui.getNextBoolean()
 nder = gui.getNextBoolean()
-=======
->>>>>>> 5a0826858ff2ad1ef736f2782cb48258a0a7df2f
 
 outputdir = path.join(basedir, "comps")
 if not path.isdir(outputdir):
@@ -85,11 +76,8 @@ for chan in chans:
 chan_list = ["C" + str(int(chans.index(chan) + 1)) for chan in chans]
 chan_list.append("None")
 
-#for name in names:
 gui = NonBlockingGenericDialog("Color Matcher")
-#	gui.addMessage("Image Set: " + name)
 gui.addMessage(chan_pairs)
-#	gui.addCheckbox("Do this set?", True)
 gui.addChoice("Red: ", chan_list, "None")
 gui.addChoice("Green: ", chan_list, "None")
 gui.addChoice("Blue: ", chan_list, "None")
@@ -99,9 +87,6 @@ gui.addChoice("Magenta: ", chan_list, "None")
 gui.addChoice("Yellow: ", chan_list, "None")
 
 gui.showDialog()
-#	do_set = gui.getNextBoolean()
-#	if not do_set:
-#		names.remove(name)
 
 red_pick = str(gui.getNextChoice())
 green_pick = str(gui.getNextChoice())
@@ -116,19 +101,7 @@ for key, value in chan_dict.items():
 	if key not in colors:
 		del chan_dict[key]
 
-<<<<<<< HEAD
 chans = chan_dict
-
-print(names)
-print(chans)
-print(scenes)
-print(times)
-print(ext)
-print(colors)
-print(timelapse)
-print(multiscene)
-print(opener)
-print(nder)
 
 def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, multiscene = True, opener = False, nder = False):
 
@@ -140,28 +113,14 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 					for line in nd_file.readlines():
 						if line.startswith("\"Stage"):
 							pos_dict[line.split(",")[0].strip("\"\n").replace("Stage", "")] = line.split(",")[1].strip("\"\n\r ")
-				scene_name = pos_dict.get(str(scene))
-				if scene_name:
+				if str(scene) in pos_dict:
+					scene_name = pos_dict.get(str(scene))
 					title = "_".join([name, scene_name])
 		else:
 			title = "_".join([name, str(scene)])
 		return title
 
 	def merge_and_save(combo_dict, colors, title, outputdir, opener):
-		color_picker = []
-=======
-if path.isdir(outputdir):
-	print(outputdir)
-print(names)
-print(chans)
-print(scenes)
-print(times)
-print(chan_list)
-print(colors)
-
-def merge_and_save():
-	if combo_dict:
->>>>>>> 5a0826858ff2ad1ef736f2782cb48258a0a7df2f
 		for color in colors:
 			if color != "None":
 				color_picker.append(combo_dict[color])
@@ -179,7 +138,6 @@ def merge_and_save():
 		else:
 			pass
 
-<<<<<<< HEAD
 	for name in names:
 		if timelapse and multiscene:
 			for scene in scenes:
@@ -267,122 +225,10 @@ def merge_and_save():
 				merge_and_save(combo_dict, colors, title, outputdir, opener)
 
 metamorpher(names, chans, scenes, times, ext, colors, timelapse, multiscene, opener, nder)
-=======
-def tl_logic():
-
-	def checker():
-		if path.isfile(still):
-			combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
-			
-	if timelapse and multiscene:
-		for time in times:
-			still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
-			checker()
-	elif timelapse:
-		for time in times:
-			still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
-			checker()
-	elif multiscene:
-		still = path.join(basedir, "_".join([name, chan, "s" + str(scene) + "".join(ext)]))
-		checker()
-	else:
-		still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
-		checker()
-
-for name in names:
-	if multiscene:
-		for scene in scenes:
-			color_picker = []
-			combo_dict = {}
-			num_stacks = []
-			for chan in chans:
-				title = "_".join([name, str(scene)])
-				stills = []
-				if timelapse:
-					for time in times:
-						# Regenerate the name from defined parts -
-						still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
-						if path.isfile(still):
-							still = ImagePlus(still)
-							num_stacks.append(still.getNSlices())
-							stills.append(still)
-					if stills:
-						max_stacks = max(num_stacks)
-						for still in stills:
-							if still.getNSlices() < max_stacks:
-								bt = still.getTitle()
-								bd = str(still.getBitDepth()) + "-bit black"
-								blank = IJ.createImage(bt, bd,
-									still.getWidth(), 
-									still.getHeight(), 
-									still.getNChannels(), 
-									max_stacks,
-									still.getNFrames())
-								for i in range(0, still.getNSlices() + 1):
-									still.setSlice(i)
-									still.copy()
-									blank.setSlice(i)
-									blank.paste()
-								imp2 = blank.duplicate()
-								stills[stills.index(still)] = imp2
-						combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-			if combo_dict:
-				print(combo_dict)
-				for color in colors:
-					if color != "None":
-						color_picker.append(combo_dict[color])
-					elif color == "None":
-						color_picker.append(None)
-				merge = RGBStackMerge.mergeChannels(color_picker, False)
-				proj = ZProjector.run(merge, "max all")
-				out = path.join(outputdir, title)
-				del title
-				IJ.saveAs(proj, "Tiff", out)
-				rand = random.randint(1, 100)
-				if rand > 85:
-					IJ.run("Collect Garbage", "")
-				else:
-					pass
-		else:
-			title = name
-			combo_dict = {}
-			color_picker = []
-			stills = []
-			if timelapse:
-				for time in times:
-					# Regenerate the name from defined parts -
-					still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
-					if path.isfile(still):
-						stills.append(ImagePlus(still))
-				if stills:
-					combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
-			else:
-				still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
-				if path.isfile(still):
-					combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
-			if combo_dict:
-				for color in colors:
-					if color != "None":
-						color_picker.append(combo_dict[color])
-					if color == "None":
-						color_picker.append(None)
-				merge = RGBStackMerge.mergeChannels(color_picker, False)
-				proj = ZProjector.run(merge, "max all")
-				out = path.join(outputdir, title)
-				del title
-				IJ.saveAs(proj, "Tiff", out)
-				rand = random.randint(1, 100)
-				if rand > 85:
-					IJ.run("Collect Garbage", "")
-				else:
-					pass
-	
->>>>>>> 5a0826858ff2ad1ef736f2782cb48258a0a7df2f
 
 gui = GenericDialog("All Done!")
 gui.showDialog()
 
-<<<<<<< HEAD
 #def merge_and_save(combo_dict = combo_dict, colors = colors, title = title, outputdir = outputdir):
 #	if combo_dict:
 #		color_picker = []
@@ -595,6 +441,113 @@ gui.showDialog()
 #						title = "_".join([name, str(scene)])
 #				else:
 #					title = "_".join([name, str(scene)])
-	
-=======
->>>>>>> 5a0826858ff2ad1ef736f2782cb48258a0a7df2f
+#	
+
+#def tl_logic():
+#
+#	def checker():
+#		if path.isfile(still):
+#			combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
+#			
+#	if timelapse and multiscene:
+#		for time in times:
+#			still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
+#			checker()
+#	elif timelapse:
+#		for time in times:
+#			still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
+#			checker()
+#	elif multiscene:
+#		still = path.join(basedir, "_".join([name, chan, "s" + str(scene) + "".join(ext)]))
+#		checker()
+#	else:
+#		still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
+#		checker()
+#
+#for name in names:
+#	if multiscene:
+#		for scene in scenes:
+#			color_picker = []
+#			combo_dict = {}
+#			num_stacks = []
+#			for chan in chans:
+#				title = "_".join([name, str(scene)])
+#				stills = []
+#				if timelapse:
+#					for time in times:
+#						# Regenerate the name from defined parts -
+#						still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
+#						if path.isfile(still):
+#							still = ImagePlus(still)
+#							num_stacks.append(still.getNSlices())
+#							stills.append(still)
+#					if stills:
+#						max_stacks = max(num_stacks)
+#						for still in stills:
+#							if still.getNSlices() < max_stacks:
+#								bt = still.getTitle()
+#								bd = str(still.getBitDepth()) + "-bit black"
+#								blank = IJ.createImage(bt, bd,
+#									still.getWidth(), 
+#									still.getHeight(), 
+#									still.getNChannels(), 
+#									max_stacks,
+#									still.getNFrames())
+#								for i in range(0, still.getNSlices() + 1):
+#									still.setSlice(i)
+#									still.copy()
+#									blank.setSlice(i)
+#									blank.paste()
+#								imp2 = blank.duplicate()
+#								stills[stills.index(still)] = imp2
+#						combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
+#			if combo_dict:
+#				print(combo_dict)
+#				for color in colors:
+#					if color != "None":
+#						color_picker.append(combo_dict[color])
+#					elif color == "None":
+#						color_picker.append(None)
+#				merge = RGBStackMerge.mergeChannels(color_picker, False)
+#				proj = ZProjector.run(merge, "max all")
+#				out = path.join(outputdir, title)
+#				del title
+#				IJ.saveAs(proj, "Tiff", out)
+#				rand = random.randint(1, 100)
+#				if rand > 85:
+#					IJ.run("Collect Garbage", "")
+#				else:
+#					pass
+#		else:
+#			title = name
+#			combo_dict = {}
+#			color_picker = []
+#			stills = []
+#			if timelapse:
+#				for time in times:
+#					# Regenerate the name from defined parts -
+#					still = path.join(basedir, "_".join([name, chan, "t" + str(time) + "".join(ext)]))
+#					if path.isfile(still):
+#						stills.append(ImagePlus(still))
+#				if stills:
+#					combo_dict["C" + str(int(chans.index(chan) + 1))] = Concatenator.run(stills)
+#			else:
+#				still = path.join(basedir, "_".join([name, chan + "".join(ext)]))
+#				if path.isfile(still):
+#					combo_dict["C" + str(int(chans.index(chan) + 1))] = ImagePlus(still)
+#			if combo_dict:
+#				for color in colors:
+#					if color != "None":
+#						color_picker.append(combo_dict[color])
+#					if color == "None":
+#						color_picker.append(None)
+#				merge = RGBStackMerge.mergeChannels(color_picker, False)
+#				proj = ZProjector.run(merge, "max all")
+#				out = path.join(outputdir, title)
+#				del title
+#				IJ.saveAs(proj, "Tiff", out)
+#				rand = random.randint(1, 100)
+#				if rand > 85:
+#					IJ.run("Collect Garbage", "")
+#				else:
+#					pass	
