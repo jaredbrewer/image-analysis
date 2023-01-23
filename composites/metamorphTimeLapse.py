@@ -17,7 +17,6 @@ gui.showDialog()
 basedir = str(gui.getNextString())
 multiscene = gui.getNextBoolean()
 timelapse = gui.getNextBoolean()
-
 opener = gui.getNextBoolean()
 nder = gui.getNextBoolean()
 

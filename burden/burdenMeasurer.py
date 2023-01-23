@@ -35,7 +35,7 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 		for file in files:
 			mext = re.search("\." + ext + "\S*$", file, re.IGNORECASE)
 			if mext:
-				if file.endswith(mext.group()):
+				if file.endswith(mext.group()) and not file.startswith("."):
 					bfiles.append(path.join(dirpath, file))
 
 	# Make sure all our measurements are set properly.
@@ -102,11 +102,13 @@ def burden(directory, chan, min_threshold, ext, screen_threshold = "Otsu dark", 
 					rm.runCommand(proj, "Delete")
 					rm.runCommand(proj, "Add")
 
-				rm.select(proj, 0)
-
-				IJ.run(proj, "Clear", "slice")
-				IJ.run(proj, "Select None", "")
-				IJ.run(proj, "Remove Overlay", "")
+				elif rm.getCount() == 1:
+					rm.select(proj, 0)
+	
+					IJ.run(proj, "Clear", "slice")
+					IJ.run(proj, "Select None", "")
+					IJ.run(proj, "Remove Overlay", "")
+				
 				rm.reset()
 
 			# Build some logic for using the outline of the fish if provided. Brightfield images probably need even more work, but this will *probably* work for fluorescent channels.
