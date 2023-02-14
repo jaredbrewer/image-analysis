@@ -1,16 +1,18 @@
 from ij import IJ, ImagePlus
 from ij.plugin import ZProjector, RGBStackMerge, Concatenator, Duplicator
 from ij.gui import GenericDialog, NonBlockingGenericDialog
+from ij.util import ThreadUtil
 import os, sys, random, re
 from os import path
+from threading import Thread
 
 gui = GenericDialog("Metamorph File Compiler")
-gui.addMessage("Version 0.1a, 17 November 2022")
+gui.addMessage("Version 0.2a, 14 February 2023")
 gui.addDirectoryField("Files Directory: ", "~/Documents")
 gui.addCheckbox("Multiple Scenes?", True)
 gui.addCheckbox("Multiple Time Points?", True)
 gui.addCheckbox("Show Merged Image?", False)
-gui.addCheckbox("Use Metadata from .nd File?", False)
+gui.addCheckbox("Use Scenes Metadata from .nd File?", False)
 
 gui.showDialog()
 
@@ -102,6 +104,8 @@ for key, value in chan_dict.items():
 
 chans = chan_dict
 
+# I really have to break this entire script down to figure out how to best incorporate multithreading. The advantages are huge, if well managed, and disastrous if done poorly.
+
 def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, multiscene = True, opener = False, nder = False):
 
 	def titler(nder, name, scene):
@@ -119,7 +123,7 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 			title = "_".join([name, str(scene)])
 		return title
 
-	def stiller(timelapse, combo_dict, name, chan, times, scene = "scene"):
+	def stiller(timelapse, combo_dict, name, chan, times, key, scene = "scene"):
 		stills = []
 		if timelapse:
 			for time in times:
@@ -164,14 +168,21 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 		else:
 			pass
 
+	max_threads = ThreadUtil.getNbCpus()
+	threads = []
+
 	for name in names:
 		if timelapse and multiscene:
+			combo_dict = {}
 			for scene in scenes:
+				threads = []
 				title = titler(nder, name, scene)
-				print(title)
-				combo_dict = {}
 				for key, chan in chans.items():
-					stiller(timelapse, combo_dict, name, chan, times, scene)
+					threads.append(Thread(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene)))
+				for i in range(len(threads)):
+					threads[i].start()
+				for i in range(len(threads)):
+					threads[i].join()
 				if combo_dict:
 					merge_and_save(combo_dict, colors, title, outputdir, opener)
 		elif timelapse:
@@ -183,11 +194,16 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				merge_and_save(combo_dict, colors, title, outputdir, opener)
 		elif multiscene:
 			# If you have a multiple scene, non-timelapse image (I'm not sure how or why it would have been set up like that?), there are definitely better options out there, but this should work?
+			combo_dict = {}
 			for scene in scenes:
+				threads = []
 				title = titler(nder, name, scene)
-				combo_dict = {}
 				for key, chan in chans.items():
-					stiller(timelapse, combo_dict, name, chan, times, scene)
+					threads.append(Thread(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene)))
+				for i in range(len(threads)):
+					threads[i].start()
+				for i in range(len(threads)):
+					threads[i].join()
 				if combo_dict:
 					merge_and_save(combo_dict, colors, title, outputdir, opener)
 		else:
