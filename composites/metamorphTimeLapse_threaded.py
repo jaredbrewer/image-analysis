@@ -174,17 +174,17 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 	for name in names:
 		if timelapse and multiscene:
 			combo_dict = {}
-			for scene in scenes:
+			for key, chan in chans.items():
 				threads = []
-				title = titler(nder, name, scene)
-				for key, chan in chans.items():
+				for scene in scenes:
+					title = titler(nder, name, scene)
 					threads.append(Thread(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene)))
 				for i in range(len(threads)):
 					threads[i].start()
 				for i in range(len(threads)):
 					threads[i].join()
-				if combo_dict:
-					merge_and_save(combo_dict, colors, title, outputdir, opener)
+			if combo_dict:
+				merge_and_save(combo_dict, colors, title, outputdir, opener)
 		elif timelapse:
 			title = name
 			combo_dict = {}
@@ -195,17 +195,17 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 		elif multiscene:
 			# If you have a multiple scene, non-timelapse image (I'm not sure how or why it would have been set up like that?), there are definitely better options out there, but this should work?
 			combo_dict = {}
-			for scene in scenes:
+			for key, chan in chans.items():
 				threads = []
-				title = titler(nder, name, scene)
-				for key, chan in chans.items():
+				for scene in scenes:
+					title = titler(nder, name, scene)
 					threads.append(Thread(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene)))
 				for i in range(len(threads)):
 					threads[i].start()
 				for i in range(len(threads)):
 					threads[i].join()
-				if combo_dict:
-					merge_and_save(combo_dict, colors, title, outputdir, opener)
+			if combo_dict:
+				merge_and_save(combo_dict, colors, title, outputdir, opener)
 		else:
 			title = name
 			combo_dict = {}
