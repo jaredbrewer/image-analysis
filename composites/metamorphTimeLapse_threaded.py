@@ -108,6 +108,10 @@ chans = chan_dict
 
 def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, multiscene = True, opener = False, nder = False):
 
+	class ConciseResult(Thread):
+		def run(self):
+			self.result = self._target(*self._args, **self._kwargs)
+
 	def titler(nder, name, scene):
 		if nder:
 			if path.isfile(path.join(basedir, name + ".nd")):
@@ -136,7 +140,8 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 					else:
 						stills.append(still)
 			if stills:
-				combo_dict[key] = Concatenator.run(stills)
+				cat = Concatenator.run(stills)
+				return cat
 		else:
 			still = path.join(basedir, "_".join([name, chan, "s" + str(scene) + "".join(ext)]))
 			if path.isfile(still):
@@ -147,7 +152,8 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				else:
 					stills.append(still)
 			if stills:
-				combo_dict[key] = ImagePlus(still)
+				cat = ImagePlus(still)
+				return cat
 
 	def merge_and_save(combo_dict, colors, title, outputdir, opener):
 		color_picker = []
@@ -168,22 +174,52 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 		else:
 			pass
 
-	max_threads = ThreadUtil.getNbCpus()
+	# The central question here is how to best implement an intelligent threading model -- this seems compelling but may not be perfect and should be reevaluated pretty aggressively if we want to eek out the maximum performance.
+	def threader(main_dict, name, chans, scenes, nder):
+		for scene in scenes:
+			thread_dict = {}
+			combo_dict = {}
+			title = titler(nder, name, scene)
+			for key, chan in chans.items():
+				thread = ConciseResult(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene))
+				thread_dict[key] = thread
+			main_dict[title] = thread
+			# We now have a dictionary of dictionaries: A main dictionary with keys as scene titles and values containing a dictionary with channels and their associated unique threads.
+		combos = {}
+		for title, threads in main_dict.items():
+			chan_dict = {}
+			for channel, thread in threads.items():
+				thread.start() # A quirk of the Jython threading model is that you need to start all of the threads before joining them for best performance.
+			for channel, thread in threads.items():
+				thread.join()
+				chan_dict[channel] = thread.result # This is why we needed a custom Thread class, to have it return a result that we could use.
+			combos[title] = chan_dict
+		for title, combo_dict in combos.items():
+			merge_and_save(combo_dict, colors, title, outputdir, opener)
+
 	threads = []
 
 	for name in names:
+		main_dict = {}
 		if timelapse and multiscene:
-			combo_dict = {}
-			for key, chan in chans.items():
-				threads = []
-				for scene in scenes:
-					title = titler(nder, name, scene)
-					threads.append(Thread(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene)))
-				for i in range(len(threads)):
-					threads[i].start()
-				for i in range(len(threads)):
-					threads[i].join()
-			if combo_dict:
+			for scene in scenes:
+				thread_dict = {}
+				combo_dict = {}
+				title = titler(nder, name, scene)
+				for key, chan in chans.items():
+					thread = ConciseResult(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene))
+					thread_dict[key] = thread
+				main_dict[title] = thread_dict
+			combos = {}
+			for title, threads in main_dict.items():
+				chan_dict = {}
+				for channel, thread in threads.items():
+					thread.start()
+				for channel, thread in threads.items():
+					thread.join()
+					chan_dict[channel] = thread.result
+				combos[title] = chan_dict
+			for title, combo_dict in combos.items():
 				merge_and_save(combo_dict, colors, title, outputdir, opener)
 		elif timelapse:
 			title = name
@@ -195,17 +231,17 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 		elif multiscene:
 			# If you have a multiple scene, non-timelapse image (I'm not sure how or why it would have been set up like that?), there are definitely better options out there, but this should work?
 			combo_dict = {}
-			for key, chan in chans.items():
+			for scene in scenes:
 				threads = []
-				for scene in scenes:
-					title = titler(nder, name, scene)
+				title = titler(nder, name, scene)
+				for key, chan in chans.items():
 					threads.append(Thread(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene)))
 				for i in range(len(threads)):
 					threads[i].start()
 				for i in range(len(threads)):
 					threads[i].join()
-			if combo_dict:
-				merge_and_save(combo_dict, colors, title, outputdir, opener)
+				if combo_dict:
+					merge_and_save(combo_dict, colors, title, outputdir, opener)
 		else:
 			title = name
 			combo_dict = {}
