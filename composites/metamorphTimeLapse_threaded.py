@@ -130,8 +130,12 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 	def stiller(timelapse, combo_dict, name, chan, times, key, scene = "scene"):
 
 		def projector(time, still):
-			proj = ZProjector.run(still, "max")
-			return proj
+			imp = ImagePlus(still)
+			if imp.getNSlices() > 1:
+				proj = ZProjector.run(imp, "max")
+				return proj
+			else:
+				return imp
 
 		if timelapse:
 			thread_dict = {}
@@ -139,15 +143,18 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 			for time in times:
 				still = path.join(basedir, "_".join([name, chan, "s" + str(scene), "t" + str(time) + "".join(ext)]))
 				if path.isfile(still):
-					still = ImagePlus(still)
-					if still.getNSlices() > 1:
-						thread = ConciseResult(target = projector, args = (time, still))
-						thread_dict[int(time)] = thread
+					thread = ConciseResult(target = projector, args = (time, still))
+					thread_dict[int(time)] = thread
+
+					# still = ImagePlus(still)
+					# if still.getNSlices() > 1:
+					# 	thread = ConciseResult(target = projector, args = (time, still))
+					# 	thread_dict[int(time)] = thread
 						# Can I parallelize this for even more performance?
 						# still = ZProjector.run(still, "max")
 						# stills.append(still)
-					else:
-						time_dict[int(time)] = still
+					# else:
+					# 	time_dict[int(time)] = still
 						# stills.append(still)
 			for thread in thread_dict.values():
 				thread.start()
