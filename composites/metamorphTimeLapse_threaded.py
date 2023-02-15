@@ -7,7 +7,7 @@ from os import path
 from threading import Thread
 
 gui = GenericDialog("Metamorph File Compiler")
-gui.addMessage("Version 0.2a, 14 February 2023")
+gui.addMessage("Version 0.3a, 15 February 2023")
 gui.addDirectoryField("Files Directory: ", "~/Documents")
 gui.addCheckbox("Multiple Scenes?", True)
 gui.addCheckbox("Multiple Time Points?", True)
@@ -129,9 +129,9 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 
 	def stiller(timelapse, combo_dict, name, chan, times, key, scene = "scene"):
 
-		def projector(time, still, time_dict):
+		def projector(time, still):
 			proj = ZProjector.run(still, "max")
-			time_dict[int(time)] = proj
+			return proj
 
 		if timelapse:
 			thread_dict = {}
@@ -141,7 +141,7 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				if path.isfile(still):
 					still = ImagePlus(still)
 					if still.getNSlices() > 1:
-						thread = ConciseResult(target = projector, args = (time, still, time_dict))
+						thread = ConciseResult(target = projector, args = (time, still))
 						thread_dict[int(time)] = thread
 						# Can I parallelize this for even more performance?
 						# still = ZProjector.run(still, "max")
@@ -153,6 +153,7 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				thread.start()
 			for time, thread in thread_dict.items():
 				thread.join()
+				time_dict[int(time)] = thread.result
 			if time_dict:
 				stills = []
 				for time, proj in sorted(time_dict.items()):
@@ -216,34 +217,12 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 
 	for name in names:
 		main_dict = {}
-		if timelapse and multiscene:
+		if multiscene:
 			threader(main_dict, name, chans, scenes, nder)
-		elif timelapse:
+		else:
 			# Threading does not seem overly beneficial in a single stage position time lapse -- you could in theory parallelize the channels but the real-world benefit seems pretty small.
 			title = name
 			combo_dict = {}
-			for key, chan in chans.items():
-				stiller(timelapse, combo_dict, name, chan, times, scene)
-			if combo_dict:
-				merge_and_save(combo_dict, colors, title, outputdir, opener)
-		elif multiscene:
-			# If you have a multiple scene, non-timelapse image (I'm not sure how or why it would have been set up like that?), there are definitely better options out there, but this should work?
-			combo_dict = {}
-			for scene in scenes:
-				threads = []
-				title = titler(nder, name, scene)
-				for key, chan in chans.items():
-					threads.append(Thread(target = stiller, args = (timelapse, combo_dict, name, chan, times, key, scene)))
-				for i in range(len(threads)):
-					threads[i].start()
-				for i in range(len(threads)):
-					threads[i].join()
-				if combo_dict:
-					merge_and_save(combo_dict, colors, title, outputdir, opener)
-		else:
-			title = name
-			combo_dict = {}
-			num_stacks = []
 			for key, chan in chans.items():
 				stiller(timelapse, combo_dict, name, chan, times, scene)
 			if combo_dict:
