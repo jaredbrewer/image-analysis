@@ -112,6 +112,13 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 		def run(self):
 			self.result = self._target(*self._args, **self._kwargs)
 
+	def clearmem():
+		avail = (float(IJ.currentMemory())/float(IJ.maxMemory()))*100
+		if avail > 85:
+			IJ.run("Collect Garbage", "")
+		else:
+			pass
+
 	def titler(nder, name, scene):
 		if nder:
 			if path.isfile(path.join(basedir, name + ".nd")):
@@ -145,17 +152,6 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				if path.isfile(still):
 					thread = ConciseResult(target = projector, args = (time, still))
 					thread_dict[int(time)] = thread
-
-					# still = ImagePlus(still)
-					# if still.getNSlices() > 1:
-					# 	thread = ConciseResult(target = projector, args = (time, still))
-					# 	thread_dict[int(time)] = thread
-						# Can I parallelize this for even more performance?
-						# still = ZProjector.run(still, "max")
-						# stills.append(still)
-					# else:
-					# 	time_dict[int(time)] = still
-						# stills.append(still)
 			for thread in thread_dict.values():
 				thread.start()
 			for time, thread in thread_dict.items():
@@ -170,15 +166,13 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 		else:
 			still = path.join(basedir, "_".join([name, chan, "s" + str(scene) + "".join(ext)]))
 			if path.isfile(still):
-				still = ImagePlus(still)
 				if still.getNSlices() > 1:
-					still = ZProjector.run(still, "max")
-					stills.append(still)
-				else:
-					stills.append(still)
-			if stills:
-				cat = ImagePlus(still)
-				return cat
+					thread = ConciseResult(target = projector, args = (time, still))
+					thread.start()
+					thread.join()
+					still = thread.result
+					cat = ImagePlus(still)
+					return cat
 
 	def merge_and_save(combo_dict, colors, title, outputdir, opener):
 		color_picker = []
@@ -193,11 +187,6 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 		out = path.join(outputdir, title)
 		del title
 		IJ.saveAs(merge, "Tiff", out)
-		avail = (float(IJ.currentMemory())/float(IJ.maxMemory()))*100
-		if avail > 85:
-			IJ.run("Collect Garbage", "")
-		else:
-			pass
 
 	# The central question here is how to best implement an intelligent threading model -- this seems compelling but may not be perfect and should be reevaluated pretty aggressively if we want to eek out the maximum performance.
 	def threader(main_dict, name, chans, scenes, nder):
@@ -217,7 +206,10 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				thread.start() # A quirk of the Jython threading model is that you need to start all of the threads before joining them for best performance.
 			for channel, thread in threads.items():
 				thread.join()
-				chan_dict[channel] = thread.result # This is why we needed a custom Thread class, to have it return a result that we could use.
+				chan_dict[channel] = thread.result
+				 # This is why we needed a custom Thread class, to have it return a result that we could use.
+				clearmem()
+				# We need some sort of memory management model, but it is difficult to decide where to put it. Realistically, the best performance is going to be flying as close to the sun as possible with memory usage but backing off when needed. This threaded model is only going to be good on very high memory systems, otherwise the single-threaded version will probably outperform and be much more reliable.
 			combos[title] = chan_dict
 		for title, combo_dict in combos.items():
 			merge_and_save(combo_dict, colors, title, outputdir, opener)
@@ -234,6 +226,7 @@ def metamorpher(names, chans, scenes, times, ext, colors, timelapse = True, mult
 				stiller(timelapse, combo_dict, name, chan, times, scene)
 			if combo_dict:
 				merge_and_save(combo_dict, colors, title, outputdir, opener)
+		clearmem()
 
 metamorpher(names, chans, scenes, times, ext, colors, timelapse, multiscene, opener, nder)
 
